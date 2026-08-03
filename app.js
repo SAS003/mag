@@ -88,26 +88,26 @@ function parseCKI(){
 
 document.getElementById("previewBtn").onclick=()=>{
 
-    const j=parseCKI();
+    const r=parseCKI();
 
-    if(!j) return;
+    if(!r) return;
 
     document.getElementById("preview").style.display="block";
 
-    document.getElementById("pLogical").innerText=
-        j.source_metadata.logical_title ?? "";
+    document.getElementById("pLogical").innerText =
+        r.logical_title ?? "";
 
-    document.getElementById("pDate").innerText=
-        j.source_metadata.conversation_start ?? "";
+    document.getElementById("pDate").innerText =
+        r.conversation_start ?? "";
 
-    document.getElementById("pPrimary").innerText=
-        j.topics.primary ?? "";
+    document.getElementById("pPrimary").innerText =
+        r.primary_topic ?? "";
 
-    document.getElementById("pSummary").innerText=
-        j.summary ?? "";
+    document.getElementById("pSummary").innerText =
+        r.summary ?? "";
 
-    document.getElementById("pRetrieval").innerText=
-        j.retrieval_summary ?? "";
+    document.getElementById("pRetrieval").innerText =
+        r.retrieval_summary ?? "";
 
 };
 
@@ -179,39 +179,39 @@ cki_json
 
 VALUES(
 
-${esc(j.source_metadata.source)},
+${esc(r.source_metadata.source)},
 
-${esc(j.source_metadata.conversation_url)},
+${esc(r.source_metadata.conversation_url)},
 
-${esc(j.source_metadata.conversation_start)},
+${esc(r.source_metadata.conversation_start)},
 
-${esc(j.source_metadata.chat_title)},
+${esc(r.source_metadata.chat_title)},
 
-${esc(j.source_metadata.logical_title)},
+${esc(r.source_metadata.logical_title)},
 
-${esc(j.processing_metadata.cki_spec_version)},
+${esc(r.processing_metadata.cki_spec_version)},
 
-${esc(j.processing_metadata.context_scope)},
+${esc(r.processing_metadata.context_scope)},
 
-${esc(j.processing_metadata.context_confidence)},
+${esc(r.processing_metadata.context_confidence)},
 
-${esc(j.processing_metadata.coverage_assessment)},
+${esc(r.processing_metadata.coverage_assessment)},
 
-${esc(j.summary)},
+${esc(r.summary)},
 
-${esc(j.retrieval_summary)},
+${esc(r.retrieval_summary)},
 
-${esc(j.topics.primary)},
+${esc(r.topics.primary)},
 
-${arr(j.topics.secondary)},
+${arr(r.topics.secondary)},
 
-${arr(j.topics.keywords)},
+${arr(r.topics.keywords)},
 
-${arr(j.systems)},
+${arr(r.systems)},
 
-${arr(j.knowledge_objects)},
+${arr(r.knowledge_objects)},
 
-${esc(JSON.stringify(j))}::jsonb
+${esc(JSON.stringify(r.cki_json))}::jsonb
 
 );
 
