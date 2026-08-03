@@ -135,6 +135,9 @@ function parseCKI(text) {
 
         const json = JSON.parse(normalized);
 
+        console.log(json);
+        console.log(Object.keys(json));
+
         const validationErrors =
             validateCKIStructure(json);
 
