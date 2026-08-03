@@ -4,15 +4,25 @@ Conversation Knowledge Workspace
 
 mag/
 │
+
 ├── index.html
+
 │
+
 ├── css/
+
 │   └── style.css
+
 │
+
 ├── js/
+
 │   ├── parser.js
+
 │   ├── preview.js
+
 │   ├── sql.js
+
 │   └── app.js
 │
 └── assets/
