@@ -75,10 +75,10 @@ function parseCKI(){
 
         current=null;
 
-        document.getElementById("status").innerHTML=
-            "❌ A beillesztett szöveg nem érvényes CKI JSON.";
+        document.getElementById("status").innerHTML =
+    "❌ " + e.message;
 
-        console.error(e);
+console.error(e);
 
         return null;
 
