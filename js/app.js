@@ -21,6 +21,36 @@ window.onload = function () {
     const sqlBtn =
         document.getElementById("sqlBtn");
 
+    const copySqlBtn =
+    document.getElementById("copySqlBtn");
+
+copySqlBtn.onclick = async function () {
+
+    const text =
+        document.getElementById("sqlOutput").value;
+
+    try {
+
+        await navigator.clipboard.writeText(text);
+
+        setStatus(
+            "✅ SQL a vágólapra másolva.",
+            "success"
+        );
+
+    }
+
+    catch {
+
+        setStatus(
+            "❌ Nem sikerült másolni.",
+            "error"
+        );
+
+    }
+
+};
+
     previewBtn.onclick = function () {
 
         const result =
