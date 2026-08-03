@@ -1,73 +1,124 @@
 <!DOCTYPE html>
 <html lang="hu">
+
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAG - CKI Import</title>
 
-    <link rel="stylesheet" href="style.css">
+    <title>MAG</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
 </head>
 
 <body>
 
-<div class="container">
+    <div class="container">
 
-    <h1>MAG</h1>
-    <h2>CKI Import</h2>
+        <header>
 
-    <textarea
-        id="jsonInput"
-        placeholder="Ide illeszd be a teljes CKI JSON-t..."></textarea>
+            <h1>MAG</h1>
+            <p class="subtitle">Conversation Knowledge Workspace</p>
 
-    <div class="buttons">
-        <button id="previewBtn">Preview</button>
-        <button id="sqlBtn">Generate SQL</button>
+        </header>
+
+        <section class="panel">
+
+            <h2>CKI Import</h2>
+
+            <textarea
+                id="jsonInput"
+                placeholder="Ide illeszd be a teljes CKI Export JSON-t..."></textarea>
+
+            <div class="button-row">
+
+                <button id="previewBtn">
+                    Preview
+                </button>
+
+                <button id="sqlBtn">
+                    Generate SQL
+                </button>
+
+                <button id="clearBtn">
+                    Clear
+                </button>
+
+            </div>
+
+            <div id="status" class="status"></div>
+
+        </section>
+
+        <section id="previewPanel" class="panel hidden">
+
+            <h2>Preview</h2>
+
+            <table class="preview-table">
+
+                <tr>
+                    <th>Logical title</th>
+                    <td id="pvLogicalTitle"></td>
+                </tr>
+
+                <tr>
+                    <th>Chat title</th>
+                    <td id="pvChatTitle"></td>
+                </tr>
+
+                <tr>
+                    <th>Conversation</th>
+                    <td id="pvConversationStart"></td>
+                </tr>
+
+                <tr>
+                    <th>Primary topic</th>
+                    <td id="pvPrimaryTopic"></td>
+                </tr>
+
+                <tr>
+                    <th>Systems</th>
+                    <td id="pvSystems"></td>
+                </tr>
+
+            </table>
+
+            <h3>Summary</h3>
+
+            <div id="pvSummary" class="preview-text"></div>
+
+            <h3>Retrieval Summary</h3>
+
+            <div id="pvRetrievalSummary" class="preview-text"></div>
+
+        </section>
+
+        <section id="sqlPanel" class="panel hidden">
+
+            <h2>Generated SQL</h2>
+
+            <textarea
+                id="sqlOutput"
+                readonly></textarea>
+
+            <div class="button-row">
+
+                <button id="copySqlBtn">
+                    Copy SQL
+                </button>
+
+            </div>
+
+        </section>
+
     </div>
 
-    <div id="status"></div>
-
-    <div id="preview" class="card" style="display:none;">
-
-        <h3>Preview</h3>
-
-        <table>
-
-            <tr>
-                <td>Logical title</td>
-                <td id="pLogical"></td>
-            </tr>
-
-            <tr>
-                <td>Conversation</td>
-                <td id="pDate"></td>
-            </tr>
-
-            <tr>
-                <td>Primary topic</td>
-                <td id="pPrimary"></td>
-            </tr>
-
-        </table>
-
-        <h4>Summary</h4>
-        <p id="pSummary"></p>
-
-        <h4>Retrieval Summary</h4>
-        <p id="pRetrieval"></p>
-
-    </div>
-
-    <div id="sqlCard" class="card" style="display:none;">
-
-        <h3>Generated SQL</h3>
-
-        <textarea id="sqlOutput" readonly></textarea>
-
-    </div>
-
-</div>
-
-<script src="app.js?v=3"></script>
+    <script src="js/parser.js"></script>
+    <script src="js/preview.js"></script>
+    <script src="js/sql.js"></script>
+    <script src="js/app.js"></script>
 
 </body>
+
 </html>
