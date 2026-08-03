@@ -1,1 +1,165 @@
+/*
+==========================================================
+MAG v0.1
+parser.js
+==========================================================
+*/
 
+function normalizeInput(text) {
+
+    if (!text) return "";
+
+    let t = text;
+
+    // BOM eltávolítása
+    t = t.replace(/^\uFEFF/, "");
+
+    // Markdown code block eleje
+    t = t.replace(/^```(?:json)?\s*/i, "");
+
+    // Markdown code block vége
+    t = t.replace(/\s*```$/i, "");
+
+    // ChatGPT contentReference maradványok
+    t = t.replace(/:contentReference.*$/gm, "");
+
+    // Windows sortörések
+    t = t.replace(/\r\n/g, "\n");
+
+    return t.trim();
+
+}
+
+
+function validateCKIStructure(json) {
+
+    const errors = [];
+
+    if (!json.source_metadata)
+        errors.push("Hiányzik: source_metadata");
+
+    if (!json.processing_metadata)
+        errors.push("Hiányzik: processing_metadata");
+
+    if (!json.summary)
+        errors.push("Hiányzik: summary");
+
+    if (!json.topics)
+        errors.push("Hiányzik: topics");
+
+    if (!json.topics?.primary)
+        errors.push("Hiányzik: topics.primary");
+
+    return errors;
+
+}
+
+
+function buildRecord(json) {
+
+    return {
+
+        source:
+            json.source_metadata?.source ?? null,
+
+        conversation_url:
+            json.source_metadata?.conversation_url ?? null,
+
+        chat_title:
+            json.source_metadata?.chat_title ?? null,
+
+        logical_title:
+            json.source_metadata?.logical_title ?? null,
+
+        conversation_start:
+            json.source_metadata?.conversation_start ?? null,
+
+        cki_spec_version:
+            json.processing_metadata?.cki_spec_version ?? null,
+
+        context_scope:
+            json.processing_metadata?.context_scope ?? null,
+
+        context_confidence:
+            json.processing_metadata?.context_confidence ?? null,
+
+        coverage_assessment:
+            json.processing_metadata?.coverage_assessment ?? null,
+
+        summary:
+            json.summary ?? "",
+
+        retrieval_summary:
+            json.retrieval_summary ?? "",
+
+        primary_topic:
+            json.topics?.primary ?? "",
+
+        secondary_topics:
+            json.topics?.secondary ?? [],
+
+        keywords:
+            json.topics?.keywords ?? [],
+
+        systems:
+            json.systems ?? [],
+
+        knowledge_objects:
+            json.knowledge_objects ?? [],
+
+        raw_json:
+            json
+
+    };
+
+}
+
+
+function parseCKI(text) {
+
+    const result = {
+
+        success: false,
+
+        record: null,
+
+        errors: [],
+
+        warnings: []
+
+    };
+
+    try {
+
+        const normalized = normalizeInput(text);
+
+        const json = JSON.parse(normalized);
+
+        const validationErrors =
+            validateCKIStructure(json);
+
+        if (validationErrors.length > 0) {
+
+            result.errors = validationErrors;
+
+            return result;
+
+        }
+
+        result.record = buildRecord(json);
+
+        result.success = true;
+
+        return result;
+
+    }
+
+    catch (err) {
+
+        result.errors.push(err.message);
+
+        return result;
+
+    }
+
+}
