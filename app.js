@@ -1,6 +1,7 @@
 console.log("MAG app.js v0.1.1");
 const r = parseCKI();
 console.log(r);
+alert("MAG app.js 0.1.2");
 
 let current = null;
 
