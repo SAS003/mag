@@ -105,22 +105,3 @@ function json(value) {
 
 }
 
-
-document
-    .getElementById("copySqlBtn")
-    .onclick = function () {
-
-        navigator.clipboard.writeText(
-
-            document
-                .getElementById("sqlOutput")
-                .value
-
-        );
-
-        setStatus(
-            "✅ SQL a vágólapra másolva.",
-            "success"
-        );
-
-    };
