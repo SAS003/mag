@@ -1,4 +1,6 @@
 console.log("MAG app.js v0.1.1");
+const r = parseCKI();
+console.log(r);
 
 let current = null;
 
