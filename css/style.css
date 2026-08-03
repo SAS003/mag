@@ -1,0 +1,260 @@
+/* ==========================================================
+   MAG v0.1
+   ----------------------------------------------------------
+   Layout
+========================================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    font-family:Arial,Helvetica,sans-serif;
+
+    background:#f4f5f7;
+
+    color:#222;
+
+    line-height:1.5;
+
+}
+
+.container{
+
+    max-width:1200px;
+
+    margin:40px auto;
+
+    padding:0 20px;
+
+}
+
+/* ==========================================================
+   Header
+========================================================== */
+
+header{
+
+    margin-bottom:30px;
+
+}
+
+header h1{
+
+    font-size:34px;
+
+    margin-bottom:6px;
+
+}
+
+.subtitle{
+
+    color:#666;
+
+    font-size:15px;
+
+}
+
+/* ==========================================================
+   Panels
+========================================================== */
+
+.panel{
+
+    background:#fff;
+
+    border:1px solid #ddd;
+
+    border-radius:8px;
+
+    padding:20px;
+
+    margin-bottom:30px;
+
+}
+
+.panel h2{
+
+    margin-bottom:15px;
+
+}
+
+.panel h3{
+
+    margin-top:20px;
+
+    margin-bottom:8px;
+
+}
+
+/* ==========================================================
+   Textarea
+========================================================== */
+
+textarea{
+
+    width:100%;
+
+    resize:vertical;
+
+    border:1px solid #bbb;
+
+    border-radius:6px;
+
+    padding:12px;
+
+    font-family:Consolas,monospace;
+
+    font-size:14px;
+
+    outline:none;
+
+}
+
+#jsonInput{
+
+    min-height:320px;
+
+}
+
+#sqlOutput{
+
+    min-height:260px;
+
+}
+
+/* ==========================================================
+   Buttons
+========================================================== */
+
+.button-row{
+
+    margin-top:18px;
+
+    display:flex;
+
+    gap:12px;
+
+}
+
+button{
+
+    border:none;
+
+    background:#2d6cdf;
+
+    color:white;
+
+    padding:10px 18px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    font-size:14px;
+
+}
+
+button:hover{
+
+    background:#2058bc;
+
+}
+
+button:disabled{
+
+    background:#b9b9b9;
+
+    cursor:not-allowed;
+
+}
+
+/* ==========================================================
+   Status
+========================================================== */
+
+.status{
+
+    margin-top:18px;
+
+    font-weight:bold;
+
+}
+
+.status.success{
+
+    color:#0a7d22;
+
+}
+
+.status.error{
+
+    color:#c52a2a;
+
+}
+
+.status.warning{
+
+    color:#b47b00;
+
+}
+
+/* ==========================================================
+   Preview
+========================================================== */
+
+.preview-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+.preview-table th{
+
+    width:220px;
+
+    text-align:left;
+
+    background:#f5f5f5;
+
+}
+
+.preview-table th,
+.preview-table td{
+
+    border:1px solid #ddd;
+
+    padding:10px;
+
+    vertical-align:top;
+
+}
+
+.preview-text{
+
+    border:1px solid #ddd;
+
+    background:#fafafa;
+
+    padding:12px;
+
+    border-radius:6px;
+
+    white-space:pre-wrap;
+
+}
+
+/* ==========================================================
+   Utilities
+========================================================== */
+
+.hidden{
+
+    display:none;
+
+}
