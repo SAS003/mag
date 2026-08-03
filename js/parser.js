@@ -119,15 +119,17 @@ function parseCKI(text) {
 
     const result = {
 
-        success: false,
+    success: false,
 
-        record: null,
+    record: null,
 
-        errors: [],
+    version: "ismeretlen",
 
-        warnings: []
+    errors: [],
 
-    };
+    warnings: []
+
+};
 
     try {
 
@@ -135,8 +137,18 @@ function parseCKI(text) {
 
         const json = JSON.parse(normalized);
 
-        console.log(json);
-        console.log(Object.keys(json));
+        // CKI verzió meghatározása
+
+        if (json.processing_metadata?.cki_spec_version) {
+
+            result.version = json.processing_metadata.cki_spec_version;
+
+        }
+        else if (json.metadata) {
+
+            result.version = "1.1 vagy régebbi";
+
+        }
 
         const validationErrors =
             validateCKIStructure(json);
