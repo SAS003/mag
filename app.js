@@ -2,12 +2,25 @@ let current = null;
 
 function cleanInput(text){
 
-    return text
-        .trim()
-        .replace(/^```json\s*/i,"")
-        .replace(/^```\s*/,"")
-        .replace(/```$/,"")
-        .trim();
+    text = text.trim();
+
+    if(text.startsWith("```")){
+
+        const firstNewLine = text.indexOf("\n");
+
+        text = text.substring(firstNewLine + 1);
+
+        const lastFence = text.lastIndexOf("```");
+
+        if(lastFence >= 0){
+            text = text.substring(0,lastFence);
+        }
+    }
+
+    // ChatGPT content reference-ek eltávolítása
+    text = text.replace(/\s*:contentReference\[[^\]]*\]\{[^}]*\}/g,"");
+
+    return text.trim();
 
 }
 
