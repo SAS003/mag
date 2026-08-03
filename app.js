@@ -1,3 +1,5 @@
+console.log("MAG app.js v0.1.1");
+
 let current = null;
 
 function cleanInput(text){
