@@ -1,14 +1,71 @@
 let current = null;
 
+function cleanInput(text){
+
+    return text
+        .trim()
+        .replace(/^```json\s*/i,"")
+        .replace(/^```\s*/,"")
+        .replace(/```$/,"")
+        .trim();
+
+}
+
+function buildRecord(j){
+
+    return {
+
+        source: j.source_metadata.source,
+
+        conversation_url: j.source_metadata.conversation_url,
+
+        conversation_start: j.source_metadata.conversation_start,
+
+        chat_title: j.source_metadata.chat_title,
+
+        logical_title: j.source_metadata.logical_title,
+
+        cki_spec_version: j.processing_metadata.cki_spec_version,
+
+        context_scope: j.processing_metadata.context_scope,
+
+        context_confidence: j.processing_metadata.context_confidence,
+
+        coverage_assessment: j.processing_metadata.coverage_assessment,
+
+        summary: j.summary,
+
+        retrieval_summary: j.retrieval_summary,
+
+        primary_topic: j.topics.primary,
+
+        secondary_topics: j.topics.secondary,
+
+        keywords: j.topics.keywords,
+
+        systems: j.systems,
+
+        knowledge_objects: j.knowledge_objects,
+
+        cki_json: j
+
+    };
+
+}
+
 function parseCKI(){
 
     try{
 
-        const txt=document.getElementById("jsonInput").value;
+        const raw=document.getElementById("jsonInput").value;
 
-        current=JSON.parse(txt);
+        const cleaned=cleanInput(raw);
 
-        document.getElementById("status").innerHTML="✅ Valid JSON";
+        const json=JSON.parse(cleaned);
+
+        current=buildRecord(json);
+
+        document.getElementById("status").innerHTML="✅ Érvényes CKI";
 
         return current;
 
@@ -16,9 +73,12 @@ function parseCKI(){
 
     catch(e){
 
-        document.getElementById("status").innerHTML="❌ Hibás JSON";
-
         current=null;
+
+        document.getElementById("status").innerHTML=
+            "❌ A beillesztett szöveg nem érvényes CKI JSON.";
+
+        console.error(e);
 
         return null;
 
