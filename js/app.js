@@ -33,7 +33,10 @@ window.onload = function () {
             clearPreview();
 
             setStatus(
-                "❌ " + result.errors.join(" | "),
+                "❌ " +
+                result.errors.join(" | ") +
+                " | CKI verzió: " +
+                result.version,
                 "error"
             );
 
