@@ -7,8 +7,14 @@ supabase.js
 
 async function saveToSupabase(record) {
 
+      Yeah.       console.log("saveToSupabase elindult");
+            console.log(record);
+
     try {
 
+            console.log(CONFIG);
+            console.log("POST indul");
+        
         const response = await fetch(
 
             CONFIG.SUPABASE_URL +
