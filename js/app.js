@@ -4,6 +4,7 @@ MAG v0.2
 app.js
 ==========================================================
 */
+    console.log("MAG", CONFIG.VERSION);
 
 let currentRecord = null;
 
