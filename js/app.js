@@ -24,6 +24,38 @@ window.onload = function () {
     const copySqlBtn =
     document.getElementById("copySqlBtn");
 
+    const saveBtn =
+    document.getElementById("saveBtn");
+
+saveBtn.onclick = async function () {
+
+    const result =
+        parseCKI(input.value);
+
+    if (!result.success) {
+
+        clearPreview();
+
+        setStatus(
+            "❌ " +
+            result.errors.join(" | ") +
+            " | CKI verzió: " +
+            result.version,
+            "error"
+        );
+
+        return;
+
+    }
+
+    currentRecord = result.record;
+
+    showPreview(currentRecord);
+
+    await saveToSupabase(currentRecord);
+
+};
+    
 copySqlBtn.onclick = async function () {
 
     const text =
