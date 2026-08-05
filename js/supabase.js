@@ -7,7 +7,7 @@ supabase.js
 
 async function saveToSupabase(record) {
 
-      Yeah.       console.log("saveToSupabase elindult");
+            console.log("saveToSupabase elindult");
             console.log(record);
 
     try {
