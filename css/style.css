@@ -258,3 +258,79 @@ button:disabled{
     display:none;
 
 }
+
+/* ==========================================================
+   CKI LIST
+========================================================== */
+
+#listPanel{
+
+    margin-top:24px;
+
+}
+
+#ckiList{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.cki-item{
+
+    padding:14px;
+
+    border:1px solid #ddd;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    transition:0.2s;
+
+    background:#fff;
+
+}
+
+.cki-item:hover{
+
+    background:#f8f8f8;
+
+}
+
+.cki-date{
+
+    font-size:.8rem;
+
+    color:#777;
+
+    margin-bottom:4px;
+
+}
+
+.cki-title{
+
+    font-weight:600;
+
+    margin-bottom:4px;
+
+}
+
+.cki-topic{
+
+    color:#666;
+
+    font-size:.9rem;
+
+}
+
+.placeholder{
+
+    color:#888;
+
+    font-style:italic;
+
+}

@@ -155,4 +155,6 @@ copySqlBtn.onclick = async function () {
 
     };
 
-}
+    loadCKIList();
+    
+};
