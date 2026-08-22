@@ -38,6 +38,20 @@ window.onload = function () {
         const result =
             parseCKI(input.value);
 
+        if (result.repaired) {
+
+        input.value = result.repairedText;
+
+        setStatus(
+            "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
+            "A tartalom és a CKI séma nem változott.",
+            "warning"
+        );
+
+        return;
+
+        }
+
         if (!result.success) {
 
             clearPreview();
@@ -93,37 +107,63 @@ window.onload = function () {
 
     previewBtn.onclick = function () {
 
-        const result =
-            parseCKI(input.value);
+    const result =
+        parseCKI(input.value);
 
-        if (!result.success) {
 
-            currentRecord = null;
+    // JSON szintaktikai javítás történt
+    if (result.repaired) {
 
-            clearPreview();
+        input.value =
+            result.repairedText;
 
-            setStatus(
-                "❌ " +
-                result.errors.join(" | ") +
-                " | CKI verzió: " +
-                result.version,
-                "error"
-            );
+        currentRecord = null;
 
-            return;
-
-        }
-
-        currentRecord = result.record;
-
-        showPreview(currentRecord);
+        clearPreview();
 
         setStatus(
-            "✅ Érvényes CKI",
-            "success"
+            "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
+            "A tartalom és a CKI séma nem változott.",
+            "warning"
         );
 
-    };
+        return;
+
+    }
+
+
+    // Normál CKI validáció hibával
+    if (!result.success) {
+
+        currentRecord = null;
+
+        clearPreview();
+
+        setStatus(
+            "❌ " +
+            result.errors.join(" | ") +
+            " | CKI verzió: " +
+            result.version,
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    // Érvényes CKI
+    currentRecord =
+        result.record;
+
+    showPreview(currentRecord);
+
+    setStatus(
+        "✅ Érvényes CKI",
+        "success"
+    );
+
+};
 
 
     clearBtn.onclick = function () {

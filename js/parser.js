@@ -1,9 +1,10 @@
 /*
 ==========================================================
-MAG v0.1
+MAG v0.2
 parser.js
 ==========================================================
 */
+
 
 function normalizeInput(text) {
 
@@ -31,6 +32,50 @@ function normalizeInput(text) {
 }
 
 
+/*
+==========================================================
+JSON SZINTAKTIKAI JAVÍTÁS
+==========================================================
+Csak olyan hibát javítunk, amely egyértelműen
+JSON-szintaktikai hiba.
+
+A tartalmat és a CKI struktúrát nem módosítjuk.
+==========================================================
+*/
+
+function repairJSONSyntax(text) {
+
+    let repaired = text;
+
+    /*
+    Hibás escape-ek javítása.
+
+    Például:
+    "source\_metadata"
+
+    helyett:
+    "source_metadata"
+
+    A JSON-ban az "_" nem escape-elhető karakter,
+    ezért a \_ egyértelmű szintaktikai hiba.
+    */
+
+    repaired = repaired.replace(
+        /\\([^"\\/bfnrtu])/g,
+        "$1"
+    );
+
+    return repaired;
+
+}
+
+
+/*
+==========================================================
+CKI STRUCTURE VALIDATION
+==========================================================
+*/
+
 function validateCKIStructure(json) {
 
     const errors = [];
@@ -54,6 +99,12 @@ function validateCKIStructure(json) {
 
 }
 
+
+/*
+==========================================================
+BUILD RECORD
+==========================================================
+*/
 
 function buildRecord(json) {
 
@@ -115,63 +166,176 @@ function buildRecord(json) {
 }
 
 
+/*
+==========================================================
+PARSE CKI
+==========================================================
+*/
+
 function parseCKI(text) {
 
     const result = {
 
-    success: false,
+        success: false,
 
-    record: null,
+        record: null,
 
-    version: "ismeretlen",
+        version: "ismeretlen",
 
-    errors: [],
+        errors: [],
 
-    warnings: []
+        warnings: [],
 
-};
+        repaired: false,
+
+        repairedText: null
+
+    };
+
 
     try {
 
-        const normalized = normalizeInput(text);
+        const normalized =
+            normalizeInput(text);
 
-        const json = JSON.parse(normalized);
 
-        // CKI verzió meghatározása
+        let json;
+
+
+        /*
+        --------------------------------------------------
+        1. Eredeti JSON megpróbálása
+        --------------------------------------------------
+        */
+
+        try {
+
+            json = JSON.parse(normalized);
+
+        }
+
+        catch (firstError) {
+
+            /*
+            --------------------------------------------------
+            2. Csak szintaktikai javítás
+            --------------------------------------------------
+            */
+
+            const repaired =
+                repairJSONSyntax(normalized);
+
+
+            /*
+            Ha a javítás nem változtatott semmin,
+            nincs mit automatikusan javítani.
+            */
+
+            if (repaired === normalized) {
+
+                result.errors.push(firstError.message);
+
+                return result;
+
+            }
+
+
+            /*
+            --------------------------------------------------
+            3. A javított JSON újra parse-olása
+            --------------------------------------------------
+            */
+
+            try {
+
+                json = JSON.parse(repaired);
+
+                result.repaired = true;
+
+                result.repairedText =
+                    JSON.stringify(json, null, 2);
+
+                return result;    
+
+            }
+
+            catch (secondError) {
+
+                result.errors.push(
+                    "A JSON szintaktikai hibája nem javítható automatikusan tartalmi módosítás nélkül."
+                );
+
+                return result;
+
+            }
+
+        }
+
+
+        /*
+        --------------------------------------------------
+        CKI verzió meghatározása
+        --------------------------------------------------
+        */
 
         if (json.processing_metadata?.cki_spec_version) {
 
-            result.version = json.processing_metadata.cki_spec_version;
+            result.version =
+                json.processing_metadata.cki_spec_version;
 
         }
+
         else if (json.metadata) {
 
-            result.version = "1.1 vagy régebbi";
+            result.version =
+                "1.1 vagy régebbi";
 
         }
+
+
+        /*
+        --------------------------------------------------
+        MEGLÉVŐ CKI VALIDÁCIÓ
+        --------------------------------------------------
+        */
 
         const validationErrors =
             validateCKIStructure(json);
 
+
         if (validationErrors.length > 0) {
 
-            result.errors = validationErrors;
+            result.errors =
+                validationErrors;
 
             return result;
 
         }
 
-        result.record = buildRecord(json);
 
-        result.success = true;
+        /*
+        --------------------------------------------------
+        RECORD ÉPÍTÉSE
+        --------------------------------------------------
+        */
+
+        result.record =
+            buildRecord(json);
+
+        result.success =
+            true;
+
 
         return result;
 
     }
 
+
     catch (err) {
 
-        result.errors.push(err.message);
+        result.errors.push(
+            err.message
+        );
 
         return result;
 
