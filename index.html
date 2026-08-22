@@ -25,7 +25,7 @@
 
         <section class="panel">
 
-            <h2>CKI Import</h2>
+            <h2>CKI Import / AP Import</h2>
 
             <textarea
                 id="jsonInput"
@@ -33,31 +33,36 @@
 
             <div class="button-row">
 
-                               <button id="previewBtn">
-                                    Preview
-                                </button>
-                                
-                                <button id="saveBtn">
-                                    Save
-                                </button>
-                                
-                                <button id="sqlBtn">
-                                    Generate SQL
-                                </button>
-                                
-                                <button id="clearBtn">
-                                    Clear
-                                </button>
+                <button id="previewBtn">
+                    Preview
+                </button>
 
-                                <button id="exportCorpusBtn">
-                                    Export CKI Corpus
-                                </button>
+                <button id="saveBtn">
+                    Save
+                </button>
+
+                <button id="sqlBtn">
+                    Generate SQL
+                </button>
+
+                <button id="clearBtn">
+                    Clear
+                </button>
+
+                <button id="exportCorpusBtn">
+                    Export CKI Corpus
+                </button>
 
             </div>
 
             <div id="status" class="status"></div>
 
         </section>
+
+
+        <!-- ======================================================
+        CKI PREVIEW
+        ====================================================== -->
 
         <section id="previewPanel" class="panel hidden">
 
@@ -94,17 +99,100 @@
 
             <h3>Summary</h3>
 
-            <div id="pvSummary" class="preview-text"></div>
+            <div
+                id="pvSummary"
+                class="preview-text">
+            </div>
 
             <h3>Retrieval Summary</h3>
 
-            <div id="pvRetrievalSummary" class="preview-text"></div>
+            <div
+                id="pvRetrievalSummary"
+                class="preview-text">
+            </div>
 
         </section>
 
-<!-- ======================================================
-CKI LIST
-====================================================== -->
+
+        <!-- ======================================================
+        ARTICLE PROFILE PREVIEW
+        ====================================================== -->
+
+        <section id="apPreviewPanel" class="panel hidden">
+
+            <h2>Article Profile Preview</h2>
+
+            <table class="preview-table">
+
+                <tr>
+                    <th>Canonical URL</th>
+                    <td id="apvCanonicalUrl"></td>
+                </tr>
+
+                <tr>
+                    <th>Title</th>
+                    <td id="apvTitle"></td>
+                </tr>
+
+                <tr>
+                    <th>H1</th>
+                    <td id="apvH1"></td>
+                </tr>
+
+                <tr>
+                    <th>Content type</th>
+                    <td id="apvContentType"></td>
+                </tr>
+
+                <tr>
+                    <th>Schema version</th>
+                    <td id="apvSchemaVersion"></td>
+                </tr>
+
+                <tr>
+                    <th>Language</th>
+                    <td id="apvLanguage"></td>
+                </tr>
+
+                <tr>
+                    <th>Primary topic</th>
+                    <td id="apvPrimaryTopic"></td>
+                </tr>
+
+                <tr>
+                    <th>Search intent</th>
+                    <td id="apvSearchIntent"></td>
+                </tr>
+
+            </table>
+
+            <h3>Summary</h3>
+
+            <div
+                id="apvSummary"
+                class="preview-text">
+            </div>
+
+            <h3>Core question</h3>
+
+            <div
+                id="apvCoreQuestion"
+                class="preview-text">
+            </div>
+
+            <h3>Core insight</h3>
+
+            <div
+                id="apvCoreInsight"
+                class="preview-text">
+            </div>
+
+        </section>
+
+
+        <!-- ======================================================
+        CKI LIST
+        ====================================================== -->
 
         <section id="listPanel" class="panel">
 
@@ -113,15 +201,17 @@ CKI LIST
             <div id="ckiList">
 
                 <div class="placeholder">
-
                     Még nincs betöltött adat.
-
                 </div>
 
             </div>
 
         </section>
 
+
+        <!-- ======================================================
+        SQL
+        ====================================================== -->
 
         <section id="sqlPanel" class="panel hidden">
 
@@ -143,14 +233,40 @@ CKI LIST
 
     </div>
 
-            <script src="js/config.js?v=021"></script>
-            <script src="js/parser.js?v=022"></script>
-            <script src="js/preview.js?v=021"></script>
-            <script src="js/sql.js?v=021"></script>
-            <script src="js/supabase.js?v=021"></script>
-            <script src="js/list.js"></script>
-            <script src="js/cki_corpus_v1.js"></script>
-            <script src="js/app.js?v=022"></script>
+
+    <!-- ======================================================
+    CORE / CKI
+    ====================================================== -->
+
+    <script src="js/config.js?v=021"></script>
+
+    <script src="js/parser.js?v=022"></script>
+
+    <script src="js/preview.js?v=021"></script>
+
+    <script src="js/sql.js?v=021"></script>
+
+    <script src="js/supabase.js?v=021"></script>
+
+    <script src="js/list.js"></script>
+
+    <script src="js/cki_corpus_v1.js"></script>
+
+
+    <!-- ======================================================
+    ARTICLE PROFILE
+    ====================================================== -->
+
+    <script src="js/ap_parser.js"></script>
+
+    <script src="js/ap_preview.js"></script>
+
+
+    <!-- ======================================================
+    APP
+    ====================================================== -->
+
+    <script src="js/app.js?v=022"></script>
 
 </body>
 

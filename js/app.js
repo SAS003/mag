@@ -105,10 +105,97 @@ window.onload = function () {
     };
 
 
-    previewBtn.onclick = function () {
+previewBtn.onclick = function () {
+
+    const raw =
+        input.value.trim();
+
+
+    // ======================================================
+    // ARTICLE PROFILE DETECTION
+    // ======================================================
+
+    let parsed = null;
+
+    try {
+
+        parsed =
+            JSON.parse(
+                normalizeAPInput(raw)
+            );
+
+    }
+
+    catch {
+
+        parsed = null;
+
+    }
+
+
+    // ======================================================
+    // ARTICLE PROFILE
+    // ======================================================
+
+    if (
+        parsed &&
+        parsed.schema_version &&
+        parsed.content_type === "article_profile" &&
+        parsed.source?.url
+    ) {
+
+        const result =
+            parseAP(raw);
+
+
+        if (!result.success) {
+
+            currentRecord = null;
+
+            clearPreview();
+
+            clearAPPreview();
+
+            setStatus(
+                "❌ AP: " +
+                result.errors.join(" | ") +
+                " | verzió: " +
+                result.version,
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        currentRecord =
+            result.record;
+
+
+        clearPreview();
+
+        showAPPreview(
+            currentRecord
+        );
+
+
+        setStatus(
+            "✅ Érvényes Article Profile",
+            "success"
+        );
+
+        return;
+
+    }
+
+
+    // ======================================================
+    // CKI
+    // ======================================================
 
     const result =
-        parseCKI(input.value);
+        parseCKI(raw);
 
 
     // JSON szintaktikai javítás történt
@@ -120,6 +207,8 @@ window.onload = function () {
         currentRecord = null;
 
         clearPreview();
+
+        clearAPPreview();
 
         setStatus(
             "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
@@ -139,6 +228,8 @@ window.onload = function () {
 
         clearPreview();
 
+        clearAPPreview();
+
         setStatus(
             "❌ " +
             result.errors.join(" | ") +
@@ -156,7 +247,12 @@ window.onload = function () {
     currentRecord =
         result.record;
 
-    showPreview(currentRecord);
+
+    clearAPPreview();
+
+    showPreview(
+        currentRecord
+    );
 
     setStatus(
         "✅ Érvényes CKI",
