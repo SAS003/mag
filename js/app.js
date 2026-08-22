@@ -4,7 +4,8 @@ MAG v0.2
 app.js
 ==========================================================
 */
-    console.log("MAG", CONFIG.VERSION);
+
+console.log("MAG", CONFIG.VERSION);
 
 let currentRecord = null;
 
@@ -23,66 +24,72 @@ window.onload = function () {
         document.getElementById("sqlBtn");
 
     const copySqlBtn =
-    document.getElementById("copySqlBtn");
+        document.getElementById("copySqlBtn");
 
     const saveBtn =
-    document.getElementById("saveBtn");
+        document.getElementById("saveBtn");
 
-saveBtn.onclick = async function () {
+    const exportCorpusBtn =
+        document.getElementById("exportCorpusBtn");
 
-    const result =
-        parseCKI(input.value);
 
-    if (!result.success) {
+    saveBtn.onclick = async function () {
 
-        clearPreview();
+        const result =
+            parseCKI(input.value);
 
-        setStatus(
-            "❌ " +
-            result.errors.join(" | ") +
-            " | CKI verzió: " +
-            result.version,
-            "error"
-        );
+        if (!result.success) {
 
-        return;
+            clearPreview();
 
-    }
+            setStatus(
+                "❌ " +
+                result.errors.join(" | ") +
+                " | CKI verzió: " +
+                result.version,
+                "error"
+            );
 
-    currentRecord = result.record;
+            return;
 
-    showPreview(currentRecord);
+        }
 
-    await saveToSupabase(currentRecord);
+        currentRecord = result.record;
 
-};
-    
-copySqlBtn.onclick = async function () {
+        showPreview(currentRecord);
 
-    const text =
-        document.getElementById("sqlOutput").value;
+        await saveToSupabase(currentRecord);
 
-    try {
+    };
 
-        await navigator.clipboard.writeText(text);
 
-        setStatus(
-            "✅ SQL a vágólapra másolva.",
-            "success"
-        );
+    copySqlBtn.onclick = async function () {
 
-    }
+        const text =
+            document.getElementById("sqlOutput").value;
 
-    catch {
+        try {
 
-        setStatus(
-            "❌ Nem sikerült másolni.",
-            "error"
-        );
+            await navigator.clipboard.writeText(text);
 
-    }
+            setStatus(
+                "✅ SQL a vágólapra másolva.",
+                "success"
+            );
 
-};
+        }
+
+        catch {
+
+            setStatus(
+                "❌ Nem sikerült másolni.",
+                "error"
+            );
+
+        }
+
+    };
+
 
     previewBtn.onclick = function () {
 
@@ -118,6 +125,7 @@ copySqlBtn.onclick = async function () {
 
     };
 
+
     clearBtn.onclick = function () {
 
         input.value = "";
@@ -138,6 +146,7 @@ copySqlBtn.onclick = async function () {
 
     };
 
+
     sqlBtn.onclick = function () {
 
         if (!currentRecord) {
@@ -155,6 +164,14 @@ copySqlBtn.onclick = async function () {
 
     };
 
+
+    exportCorpusBtn.onclick = function () {
+
+        exportCorpus();
+
+    };
+
+
     loadCKIList();
-    
+
 };
