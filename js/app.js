@@ -33,14 +33,75 @@ window.onload = function () {
         document.getElementById("exportCorpusBtn");
 
 
-    saveBtn.onclick = async function () {
+   saveBtn.onclick = async function () {
 
-        const result =
-            parseCKI(input.value);
+    const raw =
+        input.value.trim();
 
-        if (result.repaired) {
 
-        input.value = result.repairedText;
+    // ======================================================
+    // ARTICLE PROFILE
+    // ======================================================
+
+    const apResult =
+        parseAP(raw);
+
+
+    if (
+        apResult.success ||
+        (
+            apResult.version !== "ismeretlen" &&
+            apResult.errors.length > 0 &&
+            raw.includes('"schema_version"')
+        )
+    ) {
+
+        if (!apResult.success) {
+
+            currentRecord = null;
+
+            clearPreview();
+
+            clearAPPreview();
+
+            setStatus(
+                "❌ AP: " +
+                apResult.errors.join(" | ") +
+                " | verzió: " +
+                apResult.version,
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        currentRecord =
+            apResult.record;
+
+
+        await saveAPToSupabase(
+            currentRecord
+        );
+
+        return;
+
+    }
+
+
+    // ======================================================
+    // CKI — MEGLÉVŐ LOGIKA
+    // ======================================================
+
+    const result =
+        parseCKI(input.value);
+
+
+    if (result.repaired) {
+
+        input.value =
+            result.repairedText;
 
         setStatus(
             "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
@@ -50,32 +111,38 @@ window.onload = function () {
 
         return;
 
-        }
+    }
 
-        if (!result.success) {
 
-            clearPreview();
+    if (!result.success) {
 
-            setStatus(
-                "❌ " +
-                result.errors.join(" | ") +
-                " | CKI verzió: " +
-                result.version,
-                "error"
-            );
+        clearPreview();
 
-            return;
+        setStatus(
+            "❌ " +
+            result.errors.join(" | ") +
+            " | CKI verzió: " +
+            result.version,
+            "error"
+        );
 
-        }
+        return;
 
-        currentRecord = result.record;
+    }
 
-        showPreview(currentRecord);
 
-        await saveToSupabase(currentRecord);
+    currentRecord =
+        result.record;
 
-    };
+    showPreview(
+        currentRecord
+    );
 
+    await saveToSupabase(
+        currentRecord
+    );
+
+};
 
     copySqlBtn.onclick = async function () {
 
