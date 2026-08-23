@@ -5,7 +5,6 @@ parser.js
 ==========================================================
 */
 
-
 function normalizeInput(text) {
 
     if (!text) return "";
@@ -28,7 +27,6 @@ function normalizeInput(text) {
     t = t.replace(/\r\n/g, "\n");
 
     return t.trim();
-
 }
 
 
@@ -36,10 +34,11 @@ function normalizeInput(text) {
 ==========================================================
 JSON SZINTAKTIKAI JAVÍTÁS
 ==========================================================
+
 Csak olyan hibát javítunk, amely egyértelműen
 JSON-szintaktikai hiba.
 
-A tartalmat és a CKI struktúrát nem módosítjuk.
+A tartalmat és a CKI/AP struktúrát nem módosítjuk.
 ==========================================================
 */
 
@@ -51,22 +50,49 @@ function repairJSONSyntax(text) {
     Hibás escape-ek javítása.
 
     Például:
+
     "source\_metadata"
 
     helyett:
+
     "source_metadata"
 
-    A JSON-ban az "_" nem escape-elhető karakter,
+    A JSON-ban az "\_" nem escape-elhető karakter,
     ezért a \_ egyértelmű szintaktikai hiba.
     */
 
     repaired = repaired.replace(
-        /\\([^"\\/bfnrtu])/g,
+        /\\([^"\\\/bfnrtu])/g,
+        "$1"
+    );
+
+    /*
+    Trailing comma javítása.
+
+    Például:
+
+    {
+        "notes": "..."
+    },
+
+    helyett:
+
+    {
+        "notes": "..."
+    }
+
+    Ugyanez tömbök esetén is.
+
+    Csak vessző + whitespace + } vagy ]
+    mintát javítunk.
+    */
+
+    repaired = repaired.replace(
+        /,\s*([}\]])/g,
         "$1"
     );
 
     return repaired;
-
 }
 
 
@@ -96,7 +122,6 @@ function validateCKIStructure(json) {
         errors.push("Hiányzik: topics.primary");
 
     return errors;
-
 }
 
 
@@ -162,7 +187,6 @@ function buildRecord(json) {
             json
 
     };
-
 }
 
 
@@ -198,7 +222,6 @@ function parseCKI(text) {
         const normalized =
             normalizeInput(text);
 
-
         let json;
 
 
@@ -210,7 +233,8 @@ function parseCKI(text) {
 
         try {
 
-            json = JSON.parse(normalized);
+            json =
+                JSON.parse(normalized);
 
         }
 
@@ -233,7 +257,9 @@ function parseCKI(text) {
 
             if (repaired === normalized) {
 
-                result.errors.push(firstError.message);
+                result.errors.push(
+                    firstError.message
+                );
 
                 return result;
 
@@ -248,14 +274,25 @@ function parseCKI(text) {
 
             try {
 
-                json = JSON.parse(repaired);
+                json =
+                    JSON.parse(repaired);
 
                 result.repaired = true;
 
                 result.repairedText =
-                    JSON.stringify(json, null, 2);
+                    JSON.stringify(
+                        json,
+                        null,
+                        2
+                    );
 
-                return result;    
+                /*
+                Fontos:
+                itt NEM térünk vissza.
+
+                A javított JSON ugyanúgy végigmegy
+                a CKI validáción és a record építésén.
+                */
 
             }
 
@@ -278,7 +315,9 @@ function parseCKI(text) {
         --------------------------------------------------
         */
 
-        if (json.processing_metadata?.cki_spec_version) {
+        if (
+            json.processing_metadata?.cki_spec_version
+        ) {
 
             result.version =
                 json.processing_metadata.cki_spec_version;

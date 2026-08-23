@@ -7,29 +7,117 @@ Article Profile Supabase Save
 */
 
 
+function normalizeCanonicalUrl(value) {
+
+    if (!value) return null;
+
+    let url = String(value).trim();
+
+    // Markdown link:
+    // [https://example.com](https://example.com)
+    const markdownMatch =
+        url.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/i);
+
+    if (markdownMatch) {
+        url = markdownMatch[2];
+    }
+
+    return url.trim();
+}
+
+
 async function saveAPToSupabase(record) {
 
     console.log("saveAPToSupabase elindult");
-    console.log("CONFIG:", CONFIG);
-    console.log("URL:", CONFIG.SUPABASE_URL);
-    console.log("TABLE:", "ap_content_objects");
-    console.log("KEY EXISTS:", !!CONFIG.SUPABASE_ANON_KEY);
 
 
     try {
 
-        const object =
-            record.object;
+        // ==================================================
+        // 1. OBJECT ÉS PROFILE
+        // ==================================================
+
+        const object = {
+
+            ...record.object,
+
+            canonical_url:
+                normalizeCanonicalUrl(
+                    record.object?.canonical_url
+                )
+
+        };
+
 
         const profile =
             record.profile;
 
 
         // ==================================================
-        // 1. ELLENŐRZÉS
+        // 2. RETRIEVED_AT KINYERÉSE
         // ==================================================
 
-        if (!object?.canonical_url) {
+        const incomingRetrievedAtRaw =
+            record.object?.retrieved_at ??
+            record.profile?.source_retrieval?.retrieved_at ??
+            record.raw_json?.source?.retrieval?.retrieved_at ??
+            null;
+
+
+        console.log(
+            "AP incoming retrieved_at RAW:",
+            incomingRetrievedAtRaw
+        );
+
+
+        if (!incomingRetrievedAtRaw) {
+
+            setStatus(
+                "⚠️ Az új Article Profile nem tartalmaz retrieved_at értéket. Nem írjuk felül.",
+                "warning"
+            );
+
+            return;
+        }
+
+
+        const incomingRetrievedAt =
+            new Date(
+                incomingRetrievedAtRaw
+            );
+
+
+        if (
+            Number.isNaN(
+                incomingRetrievedAt.getTime()
+            )
+        ) {
+
+            setStatus(
+                "❌ Az Article Profile retrieved_at értéke nem érvényes dátum: " +
+                incomingRetrievedAtRaw,
+                "error"
+            );
+
+            return;
+        }
+
+
+        object.retrieved_at =
+            incomingRetrievedAt.toISOString();
+
+
+        console.log(
+            "AP incoming retrieved_at NORMALIZED:",
+            object.retrieved_at
+        );
+
+
+        // ==================================================
+        // 3. CANONICAL URL ELLENŐRZÉSE
+        // ==================================================
+
+        if (!object.canonical_url) {
 
             setStatus(
                 "❌ AP mentés: hiányzik a canonical URL.",
@@ -37,12 +125,11 @@ async function saveAPToSupabase(record) {
             );
 
             return;
-
         }
 
 
         // ==================================================
-        // 2. MEGLÉVŐ OBJECT KERESÉSE
+        // 4. MEGLÉVŐ OBJECT KERESÉSE
         // ==================================================
 
         const lookupResponse = await fetch(
@@ -53,7 +140,7 @@ async function saveAPToSupabase(record) {
             encodeURIComponent(
                 object.canonical_url
             ) +
-            "&select=id,date_modified",
+            "&select=id,date_modified,retrieved_at",
 
             {
 
@@ -87,7 +174,6 @@ async function saveAPToSupabase(record) {
             );
 
             return;
-
         }
 
 
@@ -95,13 +181,23 @@ async function saveAPToSupabase(record) {
             await lookupResponse.json();
 
 
+        console.log(
+            "AP lookup találatok:",
+            existing
+        );
+
+
         // ==================================================
-        // 3. ÚJ OBJECT
+        // 5. ÚJ OBJECT
         // ==================================================
 
         if (existing.length === 0) {
-console.log("AP headers test");
-console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
+
+            console.log(
+                "AP új object mentése"
+            );
+
+
             const objectResponse =
                 await fetch(
 
@@ -129,7 +225,8 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
 
                         },
 
-                        body: JSON.stringify(object)
+                        body:
+                            JSON.stringify(object)
 
                     }
 
@@ -148,20 +245,20 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
                 );
 
                 return;
-
             }
 
 
             const createdObject =
                 await objectResponse.json();
 
+
             const contentObject =
                 createdObject[0];
 
 
-            // ==============================================
-            // 4. PROFILE LÉTREHOZÁSA
-            // ==============================================
+            // ==================================================
+            // 6. PROFILE LÉTREHOZÁSA
+            // ==================================================
 
             const profileResponse =
                 await fetch(
@@ -190,14 +287,15 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
 
                         },
 
-                        body: JSON.stringify({
+                        body:
+                            JSON.stringify({
 
-                            ...profile,
+                                ...profile,
 
-                            content_object_id:
-                                contentObject.id
+                                content_object_id:
+                                    contentObject.id
 
-                        })
+                            })
 
                     }
 
@@ -216,7 +314,6 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
                 );
 
                 return;
-
             }
 
 
@@ -226,72 +323,72 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
             );
 
             return;
-
         }
 
 
         // ==================================================
-        // 5. MÁR LÉTEZŐ OBJECT
+        // 7. MEGLÉVŐ OBJECT
         // ==================================================
 
         const existingObject =
             existing[0];
 
 
-        const existingDate =
-            existingObject.date_modified
+        console.log(
+            "AP kiválasztott rekord:",
+            existingObject
+        );
+
+
+        const existingRetrievedAt =
+            existingObject.retrieved_at
                 ? new Date(
-                    existingObject.date_modified
+                    existingObject.retrieved_at
                 )
                 : null;
 
 
-        const incomingDate =
-            object.date_modified
-                ? new Date(
-                    object.date_modified
-                )
-                : null;
-
-
         // ==================================================
-        // 6. NINCS DATE MODIFIED
-        // ==================================================
-
-        if (!incomingDate) {
-
-            setStatus(
-                "⚠️ Ez az Article Profile már létezik, és nincs dateModified értéke. Nem írjuk felül.",
-                "warning"
-            );
-
-            return;
-
-        }
-
-
-        // ==================================================
-        // 7. RÉGEBBI / AZONOS
+        // 8. ÚJ KINYERÉS ELLENŐRZÉSE
         // ==================================================
 
         if (
-            existingDate &&
-            incomingDate <= existingDate
+            existingRetrievedAt &&
+            incomingRetrievedAt <= existingRetrievedAt
         ) {
 
             setStatus(
-                "⚠️ A meglévő Article Profile azonos vagy újabb. Nem írjuk felül.",
+                "⚠️ Ez az Article Profile már létezik, és nem újabb kinyerés. Nem írjuk felül.",
                 "warning"
             );
 
             return;
-
         }
 
 
         // ==================================================
-        // 8. ÚJABB PROFILE
+        // 9. FELÜLÍRÁS
         // ==================================================
+
+        const updatePayload = {
+
+            ...object,
+
+            updated_at:
+                new Date().toISOString()
+
+        };
+
+
+        console.log(
+            "AP PATCH OBJECT:",
+            JSON.stringify(
+                updatePayload,
+                null,
+                2
+            )
+        );
+
 
         const updateObjectResponse =
             await fetch(
@@ -319,23 +416,28 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
                         "Content-Type":
                             "application/json",
 
+                        // FONTOS:
+                        // A Supabase adja vissza a ténylegesen
+                        // módosított rekordot.
                         "Prefer":
-                            "return=minimal"
+                            "return=representation"
 
                     },
 
-                    body: JSON.stringify({
-
-                        ...object,
-
-                        updated_at:
-                            new Date().toISOString()
-
-                    })
+                    body:
+                        JSON.stringify(
+                            updatePayload
+                        )
 
                 }
 
             );
+
+
+        console.log(
+            "AP PATCH STATUS:",
+            updateObjectResponse.status
+        );
 
 
         if (!updateObjectResponse.ok) {
@@ -350,13 +452,75 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
             );
 
             return;
-
         }
 
 
         // ==================================================
-        // 9. PROFILE FRISSÍTÉSE
+        // 10. PATCH VÁLASZ ELLENŐRZÉSE
         // ==================================================
+
+        const updatedObjects =
+            await updateObjectResponse.json();
+
+
+        console.log(
+            "AP PATCH RESPONSE:",
+            updatedObjects
+        );
+
+
+        if (
+            !Array.isArray(updatedObjects) ||
+            updatedObjects.length === 0
+        ) {
+
+            setStatus(
+                "❌ A Supabase nem adott vissza frissített Article Profile rekordot.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const updatedObject =
+            updatedObjects[0];
+
+
+        console.log(
+            "AP ténylegesen mentett retrieved_at:",
+            updatedObject.retrieved_at
+        );
+
+
+        // ==================================================
+        // 11. TÉNYLEGES ADATBÁZIS-ELLENŐRZÉS
+        // ==================================================
+
+        if (
+            !updatedObject.retrieved_at ||
+            new Date(
+                updatedObject.retrieved_at
+            ).getTime() !==
+            incomingRetrievedAt.getTime()
+        ) {
+
+            setStatus(
+                "❌ A felülírás nem ellenőrizhető: a Supabase által visszaadott retrieved_at nem egyezik az új értékkel.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        // ==================================================
+        // 12. PROFILE FRISSÍTÉSE
+        // ==================================================
+
+        const now =
+            new Date().toISOString();
+
 
         const updateProfileResponse =
             await fetch(
@@ -389,17 +553,18 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
 
                     },
 
-                    body: JSON.stringify({
+                    body:
+                        JSON.stringify({
 
-                        ...profile,
+                            ...profile,
 
-                        last_updated_at:
-                            new Date().toISOString(),
+                            last_updated_at:
+                                now,
 
-                        updated_at:
-                            new Date().toISOString()
+                            updated_at:
+                                now
 
-                    })
+                        })
 
                 }
 
@@ -418,12 +583,16 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
             );
 
             return;
-
         }
 
 
+        // ==================================================
+        // 13. CSAK VALÓDI SIKER ESETÉN
+        // ==================================================
+
         setStatus(
-            "✅ Újabb Article Profile verzió mentve.",
+            "✅ Feltöltés sikerült, felülírva: " +
+            updatedObject.retrieved_at,
             "success"
         );
 
@@ -431,7 +600,10 @@ console.log("API key exists:", !!CONFIG.SUPABASE_ANON_KEY);
 
     catch (err) {
 
-        console.error(err);
+        console.error(
+            "AP mentési hiba:",
+            err
+        );
 
         setStatus(
             "❌ AP mentési hiba: " +

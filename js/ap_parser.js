@@ -106,7 +106,10 @@ function buildAPRecord(json) {
                 json.identity?.publication_date ?? null,
 
             date_modified:
-                json.identity?.modified_date ?? null
+                json.identity?.modified_date ?? null,
+
+            retrieved_at:
+                json.source?.retrieval?.retrieved_at ?? null
 
         },
 
@@ -261,7 +264,10 @@ function parseAP(text) {
 
         result.record =
             buildAPRecord(json);
-
+console.log(
+    "AP parser retrieved_at:",
+    result.record.object.retrieved_at
+);
         result.success = true;
 
 
