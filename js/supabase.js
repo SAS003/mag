@@ -1,6 +1,6 @@
 /*
 ==========================================================
-MAG v0.2.4
+MAG v0.2.5
 supabase.js
 ==========================================================
 
@@ -12,8 +12,7 @@ CKI import behavior:
 - UPDATE_CANDIDATE is never auto-overwritten;
 - full validated CKI JSON is preserved unchanged.
 
-The dedicated embedded_cki_export_count DB column is not
-written here until the live DB schema is verified.
+The embedded_cki_export_count field is written to the verified live DB schema.
 ==========================================================
 */
 
@@ -108,6 +107,9 @@ function buildCKISupabasePayload(record) {
 
         coverage_assessment:
             record.coverage_assessment,
+
+        embedded_cki_export_count:
+            record.embedded_cki_export_count,
 
         summary:
             record.summary,

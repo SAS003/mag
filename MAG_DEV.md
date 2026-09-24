@@ -1,7 +1,7 @@
 # MAG — Development Status
 
-Version: v0.2.4 development branch
-Status: implementation checkpoint — DB-dependent wiring pending
+Version: v0.2.5 release candidate
+Status: DB schema aligned; runtime wiring verification
 
 ## 1. Architecture
 
@@ -18,12 +18,13 @@ Current types:
 - CKI → cki_conversations
 - Article Profile → ap_content_objects + ap_content_profiles
 
-## 2. v0.2.4 changes
+## 2. v0.2.5 changes
 
 - common type detector added in js/ingest.js
 - CKI parser moved to strict canonical v1.3
 - legacy source_metadata / processing_metadata rejected
 - embedded_cki_export_count validated and included in CKI record
+- verified live DB field wired into js/supabase.js and js/sql.js
 - CKI identity states implemented in js/supabase.js
 - CKI export aligned to v1.3
 - AP routing isolated from CKI parsing
@@ -45,36 +46,35 @@ IDENTITY_UNKNOWN
 
 No automatic overwrite is performed for UPDATE_CANDIDATE.
 
-## 4. Database dependency
+## 4. Database state
 
-The repository does not currently contain a verified Supabase schema definition for cki_conversations.
+The live Supabase schema was verified and aligned on 2026-09-25.
 
-A proposed migration exists at:
-docs/db/mag_cki_v1.3_embedded_count.sql
+Verified:
+- embedded_cki_export_count exists as nullable integer
+- CHECK allows NULL or integer >= 0
+- conversation_url is not UNIQUE
+- conversation_url + cki_spec_version is not UNIQUE
+- non-UNIQUE conversation_url lookup index exists
 
-Status: PROPOSED. It has not been treated as an applied database migration.
-
-Until the live schema is verified, the dedicated embedded_cki_export_count DB column is not written by the runtime saver.
+The repository migration note at docs/db/mag_cki_v1.3_embedded_count.sql documents the applied live alignment. Supabase migration history currently has no recorded migrations because the live schema was aligned directly through SQL.
 
 ## 5. Verification status
 
-Verified by repository inspection:
-- v0.2.2 main remains unchanged
-- v0.2.4 branch contains the intended routing/parser/import changes
-- parser escape scanner correction is present
-- README and development status reflect the multi-type model
+Verified:
+- v0.2.4 RC isolated tests: 12/12 PASS
+- live Supabase CKI schema aligned
+- live embedded_cki_export_count column present
+- live conversation_url uniqueness constraints/indexes removed from the identity model
+- no current duplicate non-null conversation URLs in existing data
 
-Not yet runtime-verified in this environment:
-- browser integration
-- live Supabase insert / duplicate / update-candidate behavior
-- live DB column availability
-- automated Node test execution
-
-No claim is made that the v0.2.4 branch is production-ready until those checks are completed.
+Pending:
+- browser integration against the RC
+- real frontend INSERT / EXACT_DUPLICATE / UPDATE_CANDIDATE path
 
 ## 6. Branch
 
-mag-v0.2.4-impl
+mag-v0.2.5-rc
 
-Base: MAG v0.2.2 main
-Latest checkpoint is the branch tip after the proposed DB migration addition.
+Base: MAG v0.2.4 RC
+This checkpoint wires the verified live schema into the CKI save and SQL generation paths.

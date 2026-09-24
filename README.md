@@ -52,18 +52,25 @@ Az AP saját parserrel és saját Supabase storage/import logikával működik. 
 ## Development rules
 
 Minden jelentős kódmódosítás ellenőrzött Git checkpointot igényel.
-DB-függő módosítás csak ténylegesen ellenőrzött Supabase-séma alapján kerülhet a stabil ágba.
+DB-függő módosítás csak ténylegesen ellenőrzött Supabase-séma alapján kerül a stabil ágba.
+
+A live CKI schema v1.3 alignment megtörtént:
+- embedded_cki_export_count jelen van nullable integer mezőként, 0 vagy nagyobb CHECK constrainttel
+- conversation_url nem UNIQUE
+- conversation_url + cki_spec_version sem UNIQUE
+- nem-UNIQUE conversation_url index maradt az identity lookup támogatására
 
 ## Current development branch
 
-MAG v0.2.4 fejlesztési branch:
-mag-v0.2.4-impl
+MAG v0.2.5 release candidate:
+mag-v0.2.5-rc
 
 Scope:
+- verified live CKI v1.3 database wiring
 - common type detection
 - strict CKI v1.3 validation
 - CKI duplicate/update-candidate logic
 - AP regression protection
 - CKI v1.3 exporter
 
-Az embedded_cki_export_count külön DB-oszlopának élő sémába kötése még függőben van.
+A live DB schema alignment már megtörtént; a következő kapu a valódi frontend/Supabase import-útvonal ellenőrzése.

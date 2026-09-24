@@ -1,13 +1,13 @@
 /*
 ==========================================================
-MAG v0.2.4
+MAG v0.2.5
 config.js
 ==========================================================
 */
 
 const CONFIG = {
 
-    VERSION: "0.2.4",
+    VERSION: "0.2.5",
 
     SUPABASE_URL:
         "https://syxicldefpjdflrhynbr.supabase.co",
