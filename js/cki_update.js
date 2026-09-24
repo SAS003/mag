@@ -787,6 +787,3 @@ async function saveCKIAsNew(
 
 const showCKIUpdateDecision =
     renderCKIUpdateDecision;
-
-window.clearCKIUpdateDecision =
-    clearCKIUpdateDecision;
