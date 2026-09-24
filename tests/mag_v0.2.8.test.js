@@ -46,7 +46,7 @@ function makeCKI() {
             source: "chatgpt",
             conversation_url: "https://chatgpt.com/c/test-027",
             chat_title: "Teszt",
-            logical_title: "MAG v0.2.7 teszt",
+            logical_title: "MAG v0.2.8 teszt",
             conversation_start: null,
             cki_spec_version: "1.3",
             context_scope: "current_context",
