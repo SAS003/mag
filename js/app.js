@@ -1,6 +1,6 @@
 /*
 ==========================================================
-MAG v0.2
+MAG v0.2.1
 app.js
 ==========================================================
 */
@@ -29,46 +29,103 @@ window.onload = function () {
     const saveBtn =
         document.getElementById("saveBtn");
 
+    const exportCKIBtn =
+        document.getElementById("exportCKIBtn");
+
     const exportCorpusBtn =
         document.getElementById("exportCorpusBtn");
 
 
-   saveBtn.onclick = async function () {
+    saveBtn.onclick = async function () {
 
-    const raw =
-        input.value.trim();
-
-
-    // ======================================================
-    // ARTICLE PROFILE
-    // ======================================================
-
-    const apResult =
-        parseAP(raw);
+        const raw =
+            input.value.trim();
 
 
-    if (
-        apResult.success ||
-        (
-            apResult.version !== "ismeretlen" &&
-            apResult.errors.length > 0 &&
-            raw.includes('"schema_version"')
-        )
-    ) {
+        // ======================================================
+        // ARTICLE PROFILE
+        // ======================================================
 
-        if (!apResult.success) {
+        const apResult =
+            parseAP(raw);
 
-            currentRecord = null;
+
+        if (
+            apResult.success ||
+            (
+                apResult.version !== "ismeretlen" &&
+                apResult.errors.length > 0 &&
+                raw.includes('"schema_version"')
+            )
+        ) {
+
+            if (!apResult.success) {
+
+                currentRecord = null;
+
+                clearPreview();
+
+                clearAPPreview();
+
+                setStatus(
+                    "❌ AP: " +
+                    apResult.errors.join(" | ") +
+                    " | verzió: " +
+                    apResult.version,
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            currentRecord =
+                apResult.record;
+
+
+            await saveAPToSupabase(
+                currentRecord
+            );
+
+            return;
+
+        }
+
+
+        // ======================================================
+        // CKI — MEGLÉVŐ LOGIKA
+        // ======================================================
+
+        const result =
+            parseCKI(input.value);
+
+
+        if (result.repaired) {
+
+            input.value =
+                result.repairedText;
+
+            setStatus(
+                "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
+                "A tartalom és a CKI séma nem változott.",
+                "warning"
+            );
+
+            return;
+
+        }
+
+
+        if (!result.success) {
 
             clearPreview();
 
-            clearAPPreview();
-
             setStatus(
-                "❌ AP: " +
-                apResult.errors.join(" | ") +
-                " | verzió: " +
-                apResult.version,
+                "❌ " +
+                result.errors.join(" | ") +
+                " | CKI verzió: " +
+                result.version,
                 "error"
             );
 
@@ -78,71 +135,18 @@ window.onload = function () {
 
 
         currentRecord =
-            apResult.record;
+            result.record;
 
-
-        await saveAPToSupabase(
+        showPreview(
             currentRecord
         );
 
-        return;
-
-    }
-
-
-    // ======================================================
-    // CKI — MEGLÉVŐ LOGIKA
-    // ======================================================
-
-    const result =
-        parseCKI(input.value);
-
-
-    if (result.repaired) {
-
-        input.value =
-            result.repairedText;
-
-        setStatus(
-            "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
-            "A tartalom és a CKI séma nem változott.",
-            "warning"
+        await saveToSupabase(
+            currentRecord
         );
 
-        return;
+    };
 
-    }
-
-
-    if (!result.success) {
-
-        clearPreview();
-
-        setStatus(
-            "❌ " +
-            result.errors.join(" | ") +
-            " | CKI verzió: " +
-            result.version,
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    currentRecord =
-        result.record;
-
-    showPreview(
-        currentRecord
-    );
-
-    await saveToSupabase(
-        currentRecord
-    );
-
-};
 
     copySqlBtn.onclick = async function () {
 
@@ -172,49 +176,123 @@ window.onload = function () {
     };
 
 
-previewBtn.onclick = function () {
+    previewBtn.onclick = function () {
 
-    const raw =
-        input.value.trim();
+        const raw =
+            input.value.trim();
 
 
-    // ======================================================
-    // ARTICLE PROFILE DETECTION
-    // ======================================================
+        // ======================================================
+        // ARTICLE PROFILE DETECTION
+        // ======================================================
 
-    let parsed = null;
+        let parsed = null;
 
-    try {
+        try {
 
-        parsed =
-            JSON.parse(
-                normalizeAPInput(raw)
+            parsed =
+                JSON.parse(
+                    normalizeAPInput(raw)
+                );
+
+        }
+
+        catch {
+
+            parsed = null;
+
+        }
+
+
+        // ======================================================
+        // ARTICLE PROFILE
+        // ======================================================
+
+        if (
+            parsed &&
+            parsed.schema_version &&
+            parsed.content_type === "article_profile" &&
+            parsed.source?.url
+        ) {
+
+            const result =
+                parseAP(raw);
+
+
+            if (!result.success) {
+
+                currentRecord = null;
+
+                clearPreview();
+
+                clearAPPreview();
+
+                setStatus(
+                    "❌ AP: " +
+                    result.errors.join(" | ") +
+                    " | verzió: " +
+                    result.version,
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            currentRecord =
+                result.record;
+
+
+            clearPreview();
+
+            showAPPreview(
+                currentRecord
             );
 
-    }
 
-    catch {
+            setStatus(
+                "✅ Érvényes Article Profile",
+                "success"
+            );
 
-        parsed = null;
+            return;
 
-    }
+        }
 
 
-    // ======================================================
-    // ARTICLE PROFILE
-    // ======================================================
-
-    if (
-        parsed &&
-        parsed.schema_version &&
-        parsed.content_type === "article_profile" &&
-        parsed.source?.url
-    ) {
+        // ======================================================
+        // CKI
+        // ======================================================
 
         const result =
-            parseAP(raw);
+            parseCKI(raw);
 
 
+        // JSON szintaktikai javítás történt
+        if (result.repaired) {
+
+            input.value =
+                result.repairedText;
+
+            currentRecord = null;
+
+            clearPreview();
+
+            clearAPPreview();
+
+            setStatus(
+                "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
+                "A tartalom és a CKI séma nem változott.",
+                "warning"
+            );
+
+            return;
+
+        }
+
+
+        // Normál CKI validáció hibával
         if (!result.success) {
 
             currentRecord = null;
@@ -224,9 +302,9 @@ previewBtn.onclick = function () {
             clearAPPreview();
 
             setStatus(
-                "❌ AP: " +
+                "❌ " +
                 result.errors.join(" | ") +
-                " | verzió: " +
+                " | CKI verzió: " +
                 result.version,
                 "error"
             );
@@ -236,97 +314,31 @@ previewBtn.onclick = function () {
         }
 
 
+        // Érvényes CKI
         currentRecord =
             result.record;
 
 
-        clearPreview();
+        clearAPPreview();
 
-        showAPPreview(
+        showPreview(
             currentRecord
         );
 
-
         setStatus(
-            "✅ Érvényes Article Profile",
+            "✅ Érvényes CKI " +
+            result.version,
             "success"
         );
 
-        return;
-
-    }
+    };
 
 
-    // ======================================================
-    // CKI
-    // ======================================================
+    exportCKIBtn.onclick = function () {
 
-    const result =
-        parseCKI(raw);
+        exportCurrentCKI();
 
-
-    // JSON szintaktikai javítás történt
-    if (result.repaired) {
-
-        input.value =
-            result.repairedText;
-
-        currentRecord = null;
-
-        clearPreview();
-
-        clearAPPreview();
-
-        setStatus(
-            "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
-            "A tartalom és a CKI séma nem változott.",
-            "warning"
-        );
-
-        return;
-
-    }
-
-
-    // Normál CKI validáció hibával
-    if (!result.success) {
-
-        currentRecord = null;
-
-        clearPreview();
-
-        clearAPPreview();
-
-        setStatus(
-            "❌ " +
-            result.errors.join(" | ") +
-            " | CKI verzió: " +
-            result.version,
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    // Érvényes CKI
-    currentRecord =
-        result.record;
-
-
-    clearAPPreview();
-
-    showPreview(
-        currentRecord
-    );
-
-    setStatus(
-        "✅ Érvényes CKI",
-        "success"
-    );
-
-};
+    };
 
 
     clearBtn.onclick = function () {
