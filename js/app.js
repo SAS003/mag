@@ -1,7 +1,6 @@
 /*
 ==========================================================
-MAG v0.2.6
-app.js
+MAG app
 ==========================================================
 */
 
@@ -12,6 +11,19 @@ let currentRecord = null;
 
 function inputElement() {
     return document.getElementById("jsonInput");
+}
+
+
+function renderRuntimeVersion() {
+
+    const versionElement =
+        document.getElementById("runtimeVersion");
+
+    if (versionElement) {
+        versionElement.textContent =
+            "v" + CONFIG.VERSION;
+    }
+
 }
 
 
@@ -227,6 +239,8 @@ function handlePreview(raw) {
 
 
 window.onload = function () {
+
+    renderRuntimeVersion();
 
     const input = inputElement();
 
