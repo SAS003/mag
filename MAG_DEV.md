@@ -1,249 +1,80 @@
 # MAG — Development Status
 
-**Version:** v0.2.x  
-**Status:** active development
+Version: v0.2.3 development branch
+Status: implementation checkpoint — DB-dependent wiring pending
 
----
+## 1. Architecture
 
-## 1. Jelenlegi állapot
+MAG is a multi-type ingestion workspace.
 
-A MAG működő fejlesztési állapotban van.
+COMMON INPUT UI
+→ TYPE DETECTION
+→ TYPE-SPECIFIC PARSER
+→ TYPE-SPECIFIC VALIDATOR
+→ TYPE-SPECIFIC IMPORT
+→ TYPE-SPECIFIC STORAGE
 
-### Működő funkciók
+Current types:
+- CKI → cki_conversations
+- Article Profile → ap_content_objects + ap_content_profiles
 
-✔ CKI JSON import  
-✔ JSON syntax normalization  
-✔ Automatikus javítható JSON-szintaktikai hibák kezelése  
-✔ CKI strukturális validáció  
-✔ Preview  
-✔ Save → Supabase  
-✔ Generate SQL  
-✔ CKI lista betöltése Supabase-ből  
-✔ CKI Corpus export  
-✔ GitHub repository kapcsolat
+## 2. v0.2.3 changes
 
----
+- common type detector added in js/ingest.js
+- CKI parser moved to strict canonical v1.3
+- legacy source_metadata / processing_metadata rejected
+- embedded_cki_export_count validated and included in CKI record
+- CKI identity states implemented in js/supabase.js
+- CKI export aligned to v1.3
+- AP routing isolated from CKI parsing
+- regression test file added
 
-## 2. CKI Import működési logika
+## 3. CKI import states
 
-A CKI import két külön validációs réteget használ.
+NEW
+→ no existing record for the same conversation_url
 
-### 2.1 JSON szintaktikai réteg
+EXACT_DUPLICATE
+→ same conversation_url and semantically identical canonical JSON
 
-Feladata:
+UPDATE_CANDIDATE
+→ same conversation_url and different canonical JSON
 
-- bemenet normalizálása
-- Markdown code block eltávolítása
-- BOM eltávolítása
-- egyértelmű JSON escape-hibák automatikus javítása
+IDENTITY_UNKNOWN
+→ conversation_url is null or empty
 
-Ha a JSON javítható:
+No automatic overwrite is performed for UPDATE_CANDIDATE.
 
-> ⚠️ A JSON szintaktikai hibája automatikusan javítva.  
-> A tartalom és a CKI séma nem változott.
+## 4. Database dependency
 
-A javított JSON visszakerül az input mezőbe.
+The repository does not currently contain a verified Supabase schema definition for cki_conversations.
 
-### 2.2 CKI strukturális validáció
+A proposed migration exists at:
+docs/db/mag_cki_v1.3_embedded_count.sql
 
-A JSON syntax repair után külön fut le a meglévő CKI-validáció.
+Status: PROPOSED. It has not been treated as an applied database migration.
 
-A syntax repair és a CKI validation nem ugyanaz a réteg.
+Until the live schema is verified, the dedicated embedded_cki_export_count DB column is not written by the runtime saver.
 
-### 2.3 Preview folyamat
+## 5. Verification status
 
-**1. Preview**
+Verified by repository inspection:
+- v0.2.2 main remains unchanged
+- v0.2.3 branch contains the intended routing/parser/import changes
+- parser escape scanner correction is present
+- README and development status reflect the multi-type model
 
-Ha javítható JSON-szintaktikai hiba van:
+Not yet runtime-verified in this environment:
+- browser integration
+- live Supabase insert / duplicate / update-candidate behavior
+- live DB column availability
+- automated Node test execution
 
-→ javítás  
-→ javított JSON visszaírása  
-→ javítási üzenet  
-→ nincs "Érvényes CKI"
+No claim is made that the v0.2.3 branch is production-ready until those checks are completed.
 
-**2. Preview**
+## 6. Branch
 
-A már javított JSON:
+mag-v0.2.3-impl
 
-→ CKI strukturális validáció  
-→ hiba vagy  
-→ `✅ Érvényes CKI`
-
----
-
-## 3. Jelenlegi adatfolyam
-
-```text
-CKI JSON
-   ↓
-normalizeInput()
-   ↓
-JSON syntax check / repair
-   ↓
-CKI structure validation
-   ↓
-buildRecord()
-   ↓
-Preview
-   ↓
-Save → Supabase
-   ↓
-Generate SQL
-   ↓
-CKI Corpus Export
-````
-
----
-
-## 4. Projektstruktúra
-
-A MAG jelenlegi JavaScript moduljai:
-
-```text
-js/
-├── config.js
-├── parser.js
-├── preview.js
-├── sql.js
-├── supabase.js
-├── list.js
-├── cki_corpus_v1.js
-└── app.js
-```
-
-### Fő szerepek
-
-**config.js**
-Supabase kapcsolat és projektkonfiguráció.
-
-**parser.js**
-CKI normalizálás, JSON syntax repair, CKI structure validation, record építés.
-
-**preview.js**
-CKI rekord Preview megjelenítése.
-
-**sql.js**
-SQL generálás.
-
-**supabase.js**
-Supabase kommunikáció.
-
-**list.js**
-CKI lista betöltése és megjelenítése.
-
-**cki_corpus_v1.js**
-CKI Corpus export.
-
-**app.js**
-A felület eseményeinek és moduljainak összekapcsolása.
-
----
-
-## 5. Supabase
-
-A MAG Supabase projektet használ adatbázisként.
-
-Jelenlegi fontos táblák:
-
-* `cki_conversations`
-* `cki_relationship_suggestions`
-* `cki_profiles`
-
-A táblanevek projektazonosítóval kezdődnek, hogy ne keveredjenek más projektek tábláival.
-
----
-
-## 6. Következő fejlesztési területek
-
-A következő fejlesztéseket úgy kell hozzáadni, hogy a jelenlegi CKI Core működése ne sérüljön.
-
-### Tervezett
-
-□ Relationship Suggestions feldolgozás
-□ Profile kezelés
-□ Kereső
-□ Open Chat
-□ CKI részletező nézet
-□ Knowledge Object kezelés
-□ További corpus funkciók
-
-A pontos sorrend fejlesztés közben kerül meghatározásra.
-
----
-
-## 7. Fejlesztési környezet
-
-### Lokális fejlesztés
-
-A MAG lokálisan fut Live Server segítségével.
-
-Példa:
-
-```text
-http://127.0.0.1:5500/index.html
-```
-
-A fejlesztés VS Code-ban történik.
-
-### Git
-
-A repository kezelése GitHub Desktop / Git segítségével történik.
-
-Munkaritmus:
-
-```text
-működő állapot
-    ↓
-módosítás
-    ↓
-teszt
-    ↓
-commit
-    ↓
-push
-```
-
-Csak működő, ellenőrzött állapot kerül commitba.
-
----
-
-## 8. Stabilitási szabály
-
-A MAG meglévő CKI Core működését új funkció miatt nem szabad véletlenül megváltoztatni.
-
-Kiemelten védett területek:
-
-* CKI parser
-* JSON syntax repair
-* CKI validation
-* Preview
-* Save
-* SQL generation
-* Corpus export
-
-Új funkció esetén elsődlegesen új modult kell létrehozni, és csak szükség esetén módosítani a meglévő Core-fájlokat.
-
-A részletes stabilitási szabályokat a `README.md` tartalmazza.
-
----
-
-## 9. Jelenlegi fejlesztési checkpoint
-
-**MAG v0.2.x**
-
-A jelenlegi működő állapot:
-
-* CKI import működik
-* JSON syntax repair működik
-* Preview működik
-* CKI validation működik
-* Save → Supabase működik
-* SQL export működik
-* CKI lista működik
-* CKI Corpus export működik
-* a működő állapot Git commitban és GitHubon rögzítve van
-
-**Innen kell folytatni.**
-
-Ne állítsuk vissza korábbi állapotra a működő Core-t új funkció fejlesztése miatt.
-
+Base: MAG v0.2.2 main
+Latest checkpoint is the branch tip after the proposed DB migration addition.
