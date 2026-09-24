@@ -211,4 +211,223 @@ load("js/sql.js");
     );
 }
 
-console.log("MAG v0.2.7 tests: OK");
+(async function () {
+
+    const record = {
+        source: "chatgpt",
+        conversation_url: " https://chatgpt.com/c/test-027 ",
+        conversation_start: null,
+        chat_title: "Teszt",
+        logical_title: "MAG",
+        cki_spec_version: "1.3",
+        context_scope: "current_context",
+        context_confidence: "high",
+        coverage_assessment: "Teszt",
+        embedded_cki_export_count: 2,
+        summary: "",
+        retrieval_summary: "",
+        primary_topic: "",
+        secondary_topics: [],
+        keywords: [],
+        systems: [],
+        knowledge_objects: [],
+        raw_json: makeCKI()
+    };
+
+    const originalFetch = global.fetch;
+
+    {
+        const calls = [];
+        const messages = [];
+
+        global.setStatus = (message) => messages.push(message);
+
+        const equivalentJSON = {
+            knowledge_objects: [],
+            systems: [],
+            emerging_patterns: [],
+            metadata: {
+                embedded_cki_export_count: 2,
+                coverage_assessment: "Teszt export.",
+                context_confidence: "high",
+                context_scope: "current_context",
+                cki_spec_version: "1.3",
+                conversation_start: null,
+                logical_title: "MAG v0.2.8 teszt",
+                chat_title: "Teszt",
+                conversation_url: "https://chatgpt.com/c/test-027",
+                source: "chatgpt"
+            },
+            summary: "",
+            retrieval_summary: "",
+            topics: { keywords: [], secondary: [], primary: "" },
+            discussion_topics: [],
+            activities: [],
+            results: [],
+            key_decisions: [],
+            outputs: [],
+            open_ideas: [],
+            ai_tags: [],
+            side_threads: [],
+            knowledge: { rejected: [], refined: [], new: [] },
+            references: { external: [], prompts: [], rfcs: [], documents: [] },
+            search_questions: []
+        };
+
+        global.fetch = async (url, options = {}) => {
+            calls.push({ url, options });
+            assert.equal(options.method, "GET");
+
+            return {
+                ok: true,
+                json: async () => [
+                    {
+                        id: "existing-1",
+                        cki_json: JSON.stringify(equivalentJSON)
+                    }
+                ]
+            };
+        };
+
+        const result = await saveToSupabase(record);
+
+        assert.equal(result.state, "EXACT_DUPLICATE");
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].options.method, "GET");
+        assert.equal(
+            messages.at(-1).includes("EXACT_DUPLICATE"),
+            true
+        );
+    }
+
+    {
+        const calls = [];
+        const messages = [];
+
+        global.setStatus = (message) => messages.push(message);
+
+        const differentJSON = makeCKI();
+        differentJSON.summary = "Eltérő tartalom.";
+
+        global.fetch = async (url, options = {}) => {
+            calls.push({ url, options });
+            assert.equal(options.method, "GET");
+
+            return {
+                ok: true,
+                json: async () => [
+                    {
+                        id: "existing-2",
+                        cki_json: differentJSON
+                    }
+                ]
+            };
+        };
+
+        const result = await saveToSupabase(record);
+
+        assert.equal(result.state, "UPDATE_CANDIDATE");
+        assert.equal(result.existing_count, 1);
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].options.method, "GET");
+        assert.equal(
+            messages.at(-1).includes("UPDATE_CANDIDATE"),
+            true
+        );
+    }
+
+    {
+        const calls = [];
+        const messages = [];
+
+        global.setStatus = (message) => messages.push(message);
+
+        global.fetch = async (url, options = {}) => {
+            calls.push({ url, options });
+
+            if (options.method === "GET") {
+                return {
+                    ok: true,
+                    json: async () => []
+                };
+            }
+
+            assert.equal(options.method, "POST");
+
+            const payload = JSON.parse(options.body);
+
+            assert.equal(
+                payload.conversation_url,
+                "https://chatgpt.com/c/test-027"
+            );
+
+            return {
+                ok: true,
+                json: async () => ({})
+            };
+        };
+
+        const result = await saveToSupabase(record);
+
+        assert.equal(result.state, "NEW");
+        assert.equal(calls.length, 2);
+        assert.equal(calls[0].options.method, "GET");
+        assert.equal(calls[1].options.method, "POST");
+        assert.equal(
+            messages.at(-1).includes("NEW"),
+            true
+        );
+    }
+
+    {
+        const calls = [];
+        const messages = [];
+
+        global.setStatus = (message) => messages.push(message);
+
+        const identityUnknownRecord = {
+            ...record,
+            conversation_url: null
+        };
+
+        global.fetch = async (url, options = {}) => {
+            calls.push({ url, options });
+
+            assert.equal(options.method, "POST");
+
+            return {
+                ok: true,
+                json: async () => ({})
+            };
+        };
+
+        const result =
+            await saveToSupabase(
+                identityUnknownRecord
+            );
+
+        assert.equal(
+            result.state,
+            "IDENTITY_UNKNOWN"
+        );
+
+        assert.equal(
+            calls.length,
+            1
+        );
+
+        assert.equal(
+            messages.at(-1).includes(
+                "IDENTITY_UNKNOWN"
+            ),
+            true
+        );
+    }
+
+    global.fetch = originalFetch;
+
+    console.log(
+        "MAG v0.2.8 tests: OK"
+    );
+
+})();
