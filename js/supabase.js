@@ -1,6 +1,6 @@
 /*
 ==========================================================
-MAG v0.2.8
+MAG v0.2.9
 supabase.js
 ==========================================================
 
@@ -264,6 +264,13 @@ async function saveToSupabase(record) {
 
     try {
 
+        if (
+            typeof clearCKIUpdateDecision ===
+            "function"
+        ) {
+            clearCKIUpdateDecision();
+        }
+
         const rawUrl =
             record.conversation_url;
 
@@ -312,7 +319,7 @@ async function saveToSupabase(record) {
                 encodeURIComponent(
                     conversationUrl
                 ) +
-                "&select=id,cki_json",
+                "&select=id,inserted_at,logical_title,chat_title,conversation_start,cki_json",
                 {
                     method: "GET",
 
@@ -439,16 +446,26 @@ async function saveToSupabase(record) {
         */
 
         setStatus(
-            "⚠️ Azonos conversation_url mellett eltérő CKI található. Állapot: UPDATE_CANDIDATE. Automatikus felülírás nem történt.",
+            "⚠️ Azonos conversation_url mellett eltérő CKI található. Állapot: UPDATE_CANDIDATE. Válaszd ki: meglévő rekord frissítése vagy új rekordként mentés.",
             "warning"
         );
 
+        showCKIUpdateDecision(
+            {
+                ...record,
+                conversation_url:
+                    conversationUrl
+            },
+            existing
+        );
 
         return {
             success: true,
             state: "UPDATE_CANDIDATE",
             existing_count:
-                existing.length
+                existing.length,
+            candidates:
+                existing
         };
 
     }
