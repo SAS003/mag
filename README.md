@@ -1,64 +1,69 @@
-# mag
+# MAG
 Conversation Knowledge Workspace
-0803 Beszélgetések rendszerezése
 
-mag/
-│
+## MAG ingest architecture
 
-├── index.html
+A közös MAG input felület több tartalomtípust fogad. A közös réteg csak detektál és route-ol; a parser, validator, import és storage típusfüggő.
 
-│
+Jelenlegi típusok:
+- CKI → cki_conversations
+- Article Profile (AP) → ap_content_objects + ap_content_profiles
 
-├── css/
+Adatfolyam:
+Detect → Parse → Validate → Route → Type-specific Import
 
-│   └── style.css
+UNKNOWN vagy AMBIGUOUS input nem kerül automatikusan egyik importágba sem.
 
-│
+## CKI Core
 
-├── js/
+Az aktuális canonical specifikáció az FTR-KI01 CKI v1.3.
 
-│   ├── parser.js
-│   ├── preview.js
-│   ├── sql.js
-│   ├── cki_corpus_v1.js
-│   ├── cki_export.js
-│   └── app.js
-│
+v1.2 történeti, frozen specifikáció; a MAG nem migrálja automatikusan v1.2-re vagy v1.2-ről a bemenetet.
 
-└── assets/
+A canonical v1.3 kötelező metadata mezői közé tartozik:
+- cki_spec_version = 1.3
+- embedded_cki_export_count
 
-# MAG Core Contract
+source_metadata és processing_metadata nem canonical CKI v1.3 struktúrák.
 
-1. A meglévő CKI Import működése nem változhat új funkció miatt.
-2. A JSON syntax repair és CKI validation egymástól külön réteg.
-3. A Preview kétlépcsős működése megmarad.
-4. A Save csak valid CKI-re működhet.
-5. A Generate SQL a már validált rekordból dolgozik.
-6. A Corpus Export működése nem változhat új adatmodul miatt.
-7. Új funkció elsődlegesen új modulban jelenjen meg.
-8. Minden nagyobb módosítás előtt legyen egy működő Git commit.
-9. Tesztelés után commit, majd push.
-10. Ha egy új funkció módosít egy Core-fájlt, előbb meg kell indokolni, miért nem oldható meg külön modulban.
+## CKI import
 
-# CKI Import / Export Contract
+Elsődleges stabil identity: metadata.conversation_url.
 
-A MAG a kanonikus **FTR-KI01 CKI v1.2** szerkezetet kezeli:
+Import állapotok:
+- NEW
+- EXACT_DUPLICATE
+- UPDATE_CANDIDATE
+- IDENTITY_UNKNOWN
 
-- `metadata`
-- `summary`
-- `retrieval_summary`
-- `topics.primary`
-- további CKI v1.2 mezők
+Azonos conversation_url mellett több CKI export megengedett. Ezért conversation_url nem kezelendő automatikusan UNIQUE mezőként.
 
-Import oldalon kompatibilitási réteg kezeli a korábbi MAG-struktúrát is:
+Canonical összehasonlítás:
+- object key order nem számít
+- whitespace nem számít
+- array order számít
 
-- `source_metadata`
-- `processing_metadata`
+UPDATE_CANDIDATE esetén nincs automatikus overwrite.
 
-A parser képes a ChatGPT által adott olyan válaszból is kinyerni a CKI JSON objektumot, amelyben a JSON Markdown code blockban vagy körülötte magyarázó szöveg szerepel.
+## AP protection
 
-A `cki_json` wrapper kompatibilis importként kezelhető, de mentéshez és új exporthoz kanonikus CKI objektummá normalizálódik.
+Az AP saját parserrel és saját Supabase storage/import logikával működik. A CKI-fejlesztés nem módosíthatja az AP retrieved_at-alapú frissítési szabályát.
 
-A **Export Current CKI** kizárólag egyetlen kanonikus CKI v1.2 JSON objektumot tölt le. A fájlnév a `metadata.logical_title` alapján képződik, majd `__CKI-v1.2.json` kiterjesztést kap.
+## Development rules
 
-A **Export CKI Corpus** ettől különálló, adatbázis/corpus szintű export és változatlanul működik.
+Minden jelentős kódmódosítás ellenőrzött Git checkpointot igényel.
+DB-függő módosítás csak ténylegesen ellenőrzött Supabase-séma alapján kerülhet a stabil ágba.
+
+## Current development branch
+
+MAG v0.2.4 fejlesztési branch:
+mag-v0.2.4-impl
+
+Scope:
+- common type detection
+- strict CKI v1.3 validation
+- CKI duplicate/update-candidate logic
+- AP regression protection
+- CKI v1.3 exporter
+
+Az embedded_cki_export_count külön DB-oszlopának élő sémába kötése még függőben van.
