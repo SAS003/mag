@@ -1,7 +1,6 @@
 /*
 ==========================================================
-MAG v0.2.5
-tests/mag_v0.2.5.test.js
+MAG regression tests
 ==========================================================
 */
 
@@ -23,6 +22,21 @@ function load(relativePath) {
     );
 }
 
+load("js/config.js");
+
+assert.equal(CONFIG.VERSION, "0.2.7");
+
+const indexHtml = fs.readFileSync(
+    path.join(__dirname, "..", "index.html"),
+    "utf8"
+);
+
+assert.match(indexHtml, /id="runtimeVersion"/);
+assert.doesNotMatch(
+    indexHtml,
+    /Conversation Knowledge Workspace · MAG v0\.2\.7/
+);
+
 load("js/ingest.js");
 load("js/parser.js");
 
@@ -30,9 +44,9 @@ function makeCKI() {
     return {
         metadata: {
             source: "chatgpt",
-            conversation_url: "https://chatgpt.com/c/test-025",
+            conversation_url: "https://chatgpt.com/c/test-027",
             chat_title: "Teszt",
-            logical_title: "MAG v0.2.5 teszt",
+            logical_title: "MAG v0.2.7 teszt",
             conversation_start: null,
             cki_spec_version: "1.3",
             context_scope: "current_context",
@@ -143,7 +157,7 @@ load("js/sql.js");
 {
     const record = {
         source: "chatgpt",
-        conversation_url: "https://chatgpt.com/c/test-025",
+        conversation_url: "https://chatgpt.com/c/test-027",
         conversation_start: null,
         chat_title: "Teszt",
         logical_title: "MAG",
@@ -170,4 +184,31 @@ load("js/sql.js");
     assert.match(generated, /2/);
 }
 
-console.log("MAG v0.2.5 tests: OK");
+{
+    global.window = {};
+    const elements = {};
+
+    global.document = {
+        getElementById(id) {
+            if (!elements[id]) {
+                elements[id] = {};
+            }
+            return elements[id];
+        }
+    };
+
+    global.clearPreview = () => {};
+    global.clearAPPreview = () => {};
+    global.setStatus = () => {};
+    global.loadCKIList = () => {};
+
+    load("js/app.js");
+    window.onload();
+
+    assert.equal(
+        elements.runtimeVersion.textContent,
+        "v" + CONFIG.VERSION
+    );
+}
+
+console.log("MAG v0.2.7 tests: OK");
