@@ -24,7 +24,7 @@ function load(relativePath) {
 
 load("js/config.js");
 
-assert.equal(CONFIG.VERSION, "0.2.9");
+assert.equal(CONFIG.VERSION, "0.2.10");
 
 const indexHtml = fs.readFileSync(
     path.join(__dirname, "..", "index.html"),
@@ -34,7 +34,7 @@ const indexHtml = fs.readFileSync(
 assert.match(indexHtml, /id="runtimeVersion"/);
 assert.doesNotMatch(
     indexHtml,
-    /Conversation Knowledge Workspace · MAG v0.2.9/
+    /Conversation Knowledge Workspace · MAG v0.2.10/
 );
 
 load("js/ingest.js");
@@ -44,9 +44,9 @@ function makeCKI() {
     return {
         metadata: {
             source: "chatgpt",
-            conversation_url: "https://chatgpt.com/c/test-027",
+            conversation_url: "https://chatgpt.com/c/test-028",
             chat_title: "Teszt",
-            logical_title: "MAG v0.2.9 teszt",
+            logical_title: "MAG v0.2.10 teszt",
             conversation_start: null,
             cki_spec_version: "1.3",
             context_scope: "current_context",
@@ -196,7 +196,7 @@ function makeCKIRecordForTests() {
 {
     const record = {
         source: "chatgpt",
-        conversation_url: "https://chatgpt.com/c/test-027",
+        conversation_url: "https://chatgpt.com/c/test-028",
         conversation_start: null,
         chat_title: "Teszt",
         logical_title: "MAG",
@@ -300,7 +300,7 @@ function makeCKIRecordForTests() {
 
     const record = {
         source: "chatgpt",
-        conversation_url: " https://chatgpt.com/c/test-027 ",
+        conversation_url: " https://chatgpt.com/c/test-028 ",
         conversation_start: null,
         chat_title: "Teszt",
         logical_title: "MAG",
@@ -338,9 +338,9 @@ function makeCKIRecordForTests() {
                 context_scope: "current_context",
                 cki_spec_version: "1.3",
                 conversation_start: null,
-                logical_title: "MAG v0.2.9 teszt",
+                logical_title: "MAG v0.2.10 teszt",
                 chat_title: "Teszt",
-                conversation_url: "https://chatgpt.com/c/test-027",
+                conversation_url: "https://chatgpt.com/c/test-028",
                 source: "chatgpt"
             },
             summary: "",
@@ -443,7 +443,7 @@ function makeCKIRecordForTests() {
 
             assert.equal(
                 payload.conversation_url,
-                "https://chatgpt.com/c/test-027"
+                "https://chatgpt.com/c/test-028"
             );
 
             return {
@@ -758,7 +758,7 @@ function makeCKIRecordForTests() {
 
 
     console.log(
-        "MAG v0.2.9 tests: OK"
+        "MAG v0.2.10 tests: OK"
     );
 
 })();

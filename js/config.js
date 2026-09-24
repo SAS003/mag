@@ -6,7 +6,7 @@ MAG runtime configuration
 
 const CONFIG = {
 
-    VERSION: "0.2.9",
+    VERSION: "0.2.10",
 
     SUPABASE_URL:
         "https://syxicldefpjdflrhynbr.supabase.co",
