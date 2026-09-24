@@ -62,8 +62,8 @@ A live CKI schema v1.3 alignment megtörtént:
 
 ## Current development branch
 
-MAG v0.2.5 release candidate:
-mag-v0.2.5-rc
+MAG v0.2.6 release candidate:
+mag-v0.2.6-rc
 
 Scope:
 - verified live CKI v1.3 database wiring
@@ -73,4 +73,4 @@ Scope:
 - AP regression protection
 - CKI v1.3 exporter
 
-A live DB schema alignment már megtörtént; a következő kapu a valódi frontend/Supabase import-útvonal ellenőrzése.
+A live DB schema alignment és a böngésző cache-verzió frissítése megtörtént; a következő kapu a valódi frontend/Supabase import-útvonal ellenőrzése.

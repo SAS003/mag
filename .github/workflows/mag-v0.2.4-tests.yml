@@ -1,4 +1,4 @@
-name: MAG v0.2.5 tests
+name: MAG v0.2.6 tests
 
 on:
   push:

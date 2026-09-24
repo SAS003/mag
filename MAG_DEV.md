@@ -1,6 +1,6 @@
 # MAG — Development Status
 
-Version: v0.2.5 release candidate
+Version: v0.2.6 release candidate
 Status: DB schema aligned; runtime wiring verification
 
 ## 1. Architecture
@@ -18,7 +18,7 @@ Current types:
 - CKI → cki_conversations
 - Article Profile → ap_content_objects + ap_content_profiles
 
-## 2. v0.2.5 changes
+## 2. v0.2.6 changes
 
 - common type detector added in js/ingest.js
 - CKI parser moved to strict canonical v1.3
@@ -74,7 +74,7 @@ Pending:
 
 ## 6. Branch
 
-mag-v0.2.5-rc
+mag-v0.2.6-rc
 
 Base: MAG v0.2.4 RC
-This checkpoint wires the verified live schema into the CKI save and SQL generation paths.
+This checkpoint wires the verified live schema into the CKI save and SQL generation paths and refreshes browser cache-busting for the changed runtime files.
