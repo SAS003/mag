@@ -1,6 +1,6 @@
 /*
 ==========================================================
-MAG v0.1
+MAG v0.2.6
 sql.js
 ==========================================================
 */
@@ -36,6 +36,8 @@ context_scope,
 context_confidence,
 coverage_assessment,
 
+embedded_cki_export_count,
+
 summary,
 retrieval_summary,
 
@@ -62,6 +64,8 @@ ${txt(r.cki_spec_version)},
 ${txt(r.context_scope)},
 ${txt(r.context_confidence)},
 ${txt(r.coverage_assessment)},
+
+${txt(r.embedded_cki_export_count)},
 
 ${txt(r.summary)},
 ${txt(r.retrieval_summary)},

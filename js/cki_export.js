@@ -1,12 +1,11 @@
 /*
 ==========================================================
-MAG v0.2.1
+MAG v0.2.4
 cki_export.js
 ==========================================================
 
-Exports the currently loaded CKI as one canonical JSON object.
-This is separate from the CKI Corpus export, which remains a
-database/corpus-level operation.
+Exports the currently loaded, already validated CKI as one
+canonical v1.3 JSON object.
 ==========================================================
 */
 
@@ -29,9 +28,26 @@ function sanitizeCKIFilename(name) {
 
     return (
         safe +
-        "__CKI-v1.2.json"
+        "__CKI-v1.3.json"
     );
+}
 
+
+function canonicalizeCKI(json) {
+
+    if (
+        !json ||
+        typeof json !== "object" ||
+        Array.isArray(json)
+    ) {
+        throw new Error(
+            "Az exportált CKI nem JSON objektum."
+        );
+    }
+
+    return JSON.parse(
+        JSON.stringify(json)
+    );
 }
 
 
@@ -40,24 +56,33 @@ function exportCurrentCKI() {
     if (
         !currentRecord ||
         !currentRecord.raw_json ||
-        !currentRecord.raw_json.topics
+        !currentRecord.raw_json.metadata ||
+        currentRecord.raw_json.metadata.cki_spec_version !==
+            "1.3"
     ) {
-
         setStatus(
-            "Először tölts be és ellenőrizz egy érvényes CKI-t.",
+            "Először tölts be és ellenőrizz egy érvényes CKI v1.3 rekordot.",
             "warning"
         );
-
         return;
-
     }
 
+    let canonical;
 
-    const canonical =
-        canonicalizeCKI(
-            currentRecord.raw_json
+    try {
+        canonical =
+            canonicalizeCKI(
+                currentRecord.raw_json
+            );
+    }
+    catch (err) {
+        setStatus(
+            "❌ CKI export hiba: " +
+            err.message,
+            "error"
         );
-
+        return;
+    }
 
     const blob =
         new Blob(
@@ -69,10 +94,10 @@ function exportCurrentCKI() {
                 )
             ],
             {
-                type: "application/json;charset=utf-8"
+                type:
+                    "application/json;charset=utf-8"
             }
         );
-
 
     const url =
         URL.createObjectURL(blob);
@@ -88,17 +113,13 @@ function exportCurrentCKI() {
         );
 
     document.body.appendChild(a);
-
     a.click();
-
     document.body.removeChild(a);
 
     URL.revokeObjectURL(url);
 
-
     setStatus(
-        "✅ Kanonikus CKI v1.2 exportálva.",
+        "✅ Kanonikus CKI v1.3 exportálva.",
         "success"
     );
-
 }
