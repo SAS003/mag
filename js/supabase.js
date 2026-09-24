@@ -264,6 +264,13 @@ async function saveToSupabase(record) {
 
     try {
 
+        if (
+            typeof clearCKIUpdateDecision ===
+            "function"
+        ) {
+            clearCKIUpdateDecision();
+        }
+
         const rawUrl =
             record.conversation_url;
 
