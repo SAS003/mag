@@ -24,7 +24,7 @@ function load(relativePath) {
 
 load("js/config.js");
 
-assert.equal(CONFIG.VERSION, "0.2.8");
+assert.equal(CONFIG.VERSION, "0.2.9");
 
 const indexHtml = fs.readFileSync(
     path.join(__dirname, "..", "index.html"),
@@ -34,7 +34,7 @@ const indexHtml = fs.readFileSync(
 assert.match(indexHtml, /id="runtimeVersion"/);
 assert.doesNotMatch(
     indexHtml,
-    /Conversation Knowledge Workspace · MAG v0.2.8/
+    /Conversation Knowledge Workspace · MAG v0.2.9/
 );
 
 load("js/ingest.js");
@@ -46,7 +46,7 @@ function makeCKI() {
             source: "chatgpt",
             conversation_url: "https://chatgpt.com/c/test-027",
             chat_title: "Teszt",
-            logical_title: "MAG v0.2.8 teszt",
+            logical_title: "MAG v0.2.9 teszt",
             conversation_start: null,
             cki_spec_version: "1.3",
             context_scope: "current_context",
@@ -152,7 +152,46 @@ function makeCKI() {
 }
 
 load("js/supabase.js");
+load("js/cki_update.js");
 load("js/sql.js");
+
+function makeCKIRecordForTests() {
+
+    const raw_json = makeCKI();
+
+    return {
+        source: raw_json.metadata.source,
+        conversation_url: raw_json.metadata.conversation_url,
+        conversation_start:
+            raw_json.metadata.conversation_start,
+        chat_title: raw_json.metadata.chat_title,
+        logical_title: raw_json.metadata.logical_title,
+        cki_spec_version:
+            raw_json.metadata.cki_spec_version,
+        context_scope:
+            raw_json.metadata.context_scope,
+        context_confidence:
+            raw_json.metadata.context_confidence,
+        coverage_assessment:
+            raw_json.metadata.coverage_assessment,
+        embedded_cki_export_count:
+            raw_json.metadata.embedded_cki_export_count,
+        summary: raw_json.summary,
+        retrieval_summary:
+            raw_json.retrieval_summary,
+        primary_topic:
+            raw_json.topics.primary,
+        secondary_topics:
+            raw_json.topics.secondary,
+        keywords:
+            raw_json.topics.keywords,
+        systems: raw_json.systems,
+        knowledge_objects:
+            raw_json.knowledge_objects,
+        raw_json
+    };
+
+}
 
 {
     const record = {
@@ -191,7 +230,15 @@ load("js/sql.js");
     global.document = {
         getElementById(id) {
             if (!elements[id]) {
-                elements[id] = {};
+                elements[id] = {
+                    classList: {
+                        add() {},
+                        remove() {}
+                    },
+                    appendChild() {},
+                    innerHTML: "",
+                    textContent: ""
+                };
             }
             return elements[id];
         }
@@ -210,6 +257,30 @@ load("js/sql.js");
         "v" + CONFIG.VERSION
     );
 }
+
+
+{
+    const incoming = makeCKI();
+    incoming.metadata.conversation_start =
+        "2026-09-25";
+
+    const existing = makeCKI();
+    existing.metadata.conversation_start =
+        "2026-09-24";
+
+    const paths =
+        collectDifferencePaths(
+            incoming,
+            existing
+        );
+
+    assert.ok(
+        paths.includes(
+            "metadata.conversation_start"
+        )
+    );
+}
+
 
 (async function () {
 
@@ -253,7 +324,7 @@ load("js/sql.js");
                 context_scope: "current_context",
                 cki_spec_version: "1.3",
                 conversation_start: null,
-                logical_title: "MAG v0.2.8 teszt",
+                logical_title: "MAG v0.2.9 teszt",
                 chat_title: "Teszt",
                 conversation_url: "https://chatgpt.com/c/test-027",
                 source: "chatgpt"
@@ -426,8 +497,254 @@ load("js/sql.js");
 
     global.fetch = originalFetch;
 
+    {
+        const candidateJSON = makeCKI();
+        candidateJSON.metadata.conversation_start =
+            "2026-09-24";
+
+        const incomingRecord = {
+            ...makeCKIRecordForTests(),
+            conversation_url:
+                "https://chatgpt.com/c/test-update"
+        };
+
+        const candidate = {
+            id: "candidate-1",
+            cki_json: candidateJSON
+        };
+
+        const calls = [];
+        const messages = [];
+
+        global.setStatus =
+            message => messages.push(message);
+
+        global.fetch =
+            async (url, options = {}) => {
+
+                calls.push({
+                    url,
+                    options
+                });
+
+                if (
+                    options.method ===
+                    "GET"
+                ) {
+                    return {
+                        ok: true,
+                        json:
+                            async () => [
+                                {
+                                    id:
+                                        "candidate-1",
+                                    cki_json:
+                                        candidateJSON
+                                }
+                            ]
+                    };
+                }
+
+                assert.equal(
+                    options.method,
+                    "PATCH"
+                );
+
+                const payload =
+                    JSON.parse(
+                        options.body
+                    );
+
+                assert.equal(
+                    payload.conversation_url,
+                    "https://chatgpt.com/c/test-update"
+                );
+
+                return {
+                    ok: true,
+                    json:
+                        async () => ({})
+                };
+
+            };
+
+        global.loadCKIList =
+            async () => {};
+
+        const result =
+            await updateExistingCKIRecord(
+                candidate,
+                incomingRecord
+            );
+
+        assert.equal(
+            result.success,
+            true
+        );
+
+        assert.equal(
+            result.state,
+            "UPDATE_EXISTING"
+        );
+
+        assert.equal(
+            result.id,
+            "candidate-1"
+        );
+
+        assert.equal(
+            calls.length,
+            2
+        );
+
+        assert.equal(
+            calls[0].options.method,
+            "GET"
+        );
+
+        assert.equal(
+            calls[1].options.method,
+            "PATCH"
+        );
+    }
+
+    {
+        const record = {
+            ...makeCKIRecordForTests(),
+            conversation_url:
+                "https://chatgpt.com/c/test-new"
+        };
+
+        const calls = [];
+        const messages = [];
+
+        global.setStatus =
+            message => messages.push(message);
+
+        global.fetch =
+            async (url, options = {}) => {
+
+                calls.push({
+                    url,
+                    options
+                });
+
+                assert.equal(
+                    options.method,
+                    "POST"
+                );
+
+                return {
+                    ok: true,
+                    json:
+                        async () => ({})
+                };
+
+            };
+
+        const result =
+            await saveCKIAsNew(
+                record
+            );
+
+        assert.equal(
+            result.success,
+            true
+        );
+
+        assert.equal(
+            result.state,
+            "SAVE_AS_NEW"
+        );
+
+        assert.equal(
+            calls.length,
+            1
+        );
+
+        assert.ok(
+            messages.at(-1).includes(
+                "SAVE_AS_NEW"
+            )
+        );
+    }
+
+    {
+        const candidateJSON =
+            makeCKI();
+
+        const candidate = {
+            id:
+                "candidate-conflict",
+            cki_json:
+                candidateJSON
+        };
+
+        const incomingRecord = {
+            ...makeCKIRecordForTests(),
+            conversation_url:
+                "https://chatgpt.com/c/test-conflict"
+        };
+
+        const changedJSON =
+            makeCKI();
+
+        changedJSON.summary =
+            "Időközben módosult.";
+
+        const calls = [];
+
+        global.setStatus =
+            () => {};
+
+        global.fetch =
+            async () => {
+
+                calls.push(
+                    true
+                );
+
+                return {
+                    ok: true,
+                    json:
+                        async () => [
+                            {
+                                id:
+                                    "candidate-conflict",
+                                cki_json:
+                                    changedJSON
+                            }
+                        ]
+                };
+
+            };
+
+        const result =
+            await updateExistingCKIRecord(
+                candidate,
+                incomingRecord
+            );
+
+        assert.equal(
+            result.success,
+            false
+        );
+
+        assert.equal(
+            result.state,
+            "UPDATE_CONFLICT"
+        );
+
+        assert.equal(
+            calls.length,
+            1
+        );
+
+    }
+
+
     console.log(
-        "MAG v0.2.8 tests: OK"
+        "MAG v0.2.9 tests: OK"
     );
 
 })();
