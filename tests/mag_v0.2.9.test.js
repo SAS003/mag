@@ -241,6 +241,20 @@ function makeCKIRecordForTests() {
                 };
             }
             return elements[id];
+        },
+        createElement(tag) {
+            return {
+                tagName: tag.toUpperCase(),
+                className: "",
+                textContent: "",
+                innerHTML: "",
+                onclick: null,
+                classList: {
+                    add() {},
+                    remove() {}
+                },
+                appendChild() {}
+            };
         }
     };
 
