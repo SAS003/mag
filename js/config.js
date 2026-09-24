@@ -7,7 +7,7 @@ config.js
 
 const CONFIG = {
 
-    VERSION: "0.2.1",
+    VERSION: "0.2.3",
 
     SUPABASE_URL:
         "https://syxicldefpjdflrhynbr.supabase.co",
