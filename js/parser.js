@@ -1,18 +1,35 @@
 /*
 ==========================================================
-MAG v0.2.1
+MAG v0.2.2
 parser.js
 ==========================================================
 
-CKI input compatibility:
-- canonical CKI v1.2: root.metadata
-- legacy MAG structure: root.source_metadata + root.processing_metadata
-- ChatGPT wrapper: root.cki_json
-- mixed Markdown/prose containing one CKI JSON object
+CKI input contract:
+- canonical CKI v1.2 only
+- JSON may be direct, fenced, or embedded in prose
+- validation is strict: non-v1.2 structures are rejected
+- legacy source_metadata / processing_metadata are NOT
+  treated as canonical CKI v1.2
 ==========================================================
 */
 
 const CKI_CANONICAL_VERSION = "1.2";
+
+
+function isObject(value) {
+    return value && typeof value === "object" && !Array.isArray(value);
+}
+
+
+function looksLikeCanonicalCKI(json) {
+
+    return isObject(json) &&
+        isObject(json.metadata) &&
+        Object.prototype.hasOwnProperty.call(json, "summary") &&
+        Object.prototype.hasOwnProperty.call(json, "retrieval_summary") &&
+        isObject(json.topics) &&
+        Boolean(json.topics.primary);
+}
 
 
 function extractJSONCandidate(text) {
@@ -25,182 +42,101 @@ function extractJSONCandidate(text) {
 
     // 1. Direct JSON input.
     try {
-
         JSON.parse(source);
-
         return source;
-
     }
-
     catch {}
 
-    // 2. Prefer fenced JSON blocks that contain a CKI-shaped object.
-    const fenced = /\`\`\`(?:json)?\s*([\s\S]*?)\`\`\`/gi;
+    // 2. Fenced JSON blocks.
+    const fenced = /```(?:json)?\s*([\s\S]*?)```/gi;
     const fencedCandidates = [];
-
     let match;
 
     while ((match = fenced.exec(source)) !== null) {
 
-        const candidate =
-            match[1].trim();
+        const candidate = match[1].trim();
 
         try {
-
-            const parsed =
-                JSON.parse(candidate);
-
-            fencedCandidates.push({
-                text: candidate,
-                json: parsed
-            });
-
+            const parsed = JSON.parse(candidate);
+            fencedCandidates.push({ text: candidate, json: parsed });
         }
-
         catch {}
-
     }
 
+    const canonicalFenced = fencedCandidates.find(
+        item => looksLikeCanonicalCKI(item.json)
+    );
 
-    const isCKIShaped = (json) => {
-
-        if (
-            !json ||
-            typeof json !== "object" ||
-            Array.isArray(json)
-        ) {
-
-            return false;
-
-        }
-
-        return Boolean(
-            json.metadata ||
-            json.source_metadata ||
-            json.cki_json ||
-            json.topics ||
-            json.summary
-        );
-
-    };
-
-
-    const ckiFenced =
-        fencedCandidates.find(
-            item => isCKIShaped(item.json)
-        );
-
-
-    if (ckiFenced)
-        return ckiFenced.text;
-
+    if (canonicalFenced)
+        return canonicalFenced.text;
 
     if (fencedCandidates.length === 1)
         return fencedCandidates[0].text;
 
-
-    // 3. Balanced-object extraction for Markdown/prose without code fences.
+    // 3. Balanced-object extraction from surrounding prose.
     let start = -1;
     let depth = 0;
     let inString = false;
     let escaped = false;
 
-
     for (let i = 0; i < source.length; i++) {
 
         const ch = source[i];
 
-
         if (start === -1) {
-
             if (ch === "{") {
-
                 start = i;
                 depth = 1;
                 inString = false;
                 escaped = false;
-
             }
-
             continue;
-
         }
-
 
         if (escaped) {
-
             escaped = false;
-
             continue;
-
         }
-
 
         if (ch === "\\" && inString) {
-
             escaped = true;
-
             continue;
-
         }
-
 
         if (ch === '"') {
-
             inString = !inString;
-
             continue;
-
         }
-
 
         if (inString)
             continue;
 
-
-        if (ch === "{")
-            depth++;
-
-
-        if (ch === "}")
-            depth--;
-
+        if (ch === "{") depth++;
+        if (ch === "}") depth--;
 
         if (depth === 0) {
 
-            const candidate =
-                source.slice(start, i + 1);
+            const candidate = source.slice(start, i + 1);
 
             try {
+                const parsed = JSON.parse(candidate);
 
-                const parsed =
-                    JSON.parse(candidate);
-
-                if (isCKIShaped(parsed))
+                if (looksLikeCanonicalCKI(parsed))
                     return candidate;
-
             }
-
             catch {}
 
             start = -1;
-
         }
-
     }
 
-
     return source;
-
 }
 
 
 function normalizeInput(text) {
-
     if (!text) return "";
-
     return extractJSONCandidate(text).trim();
-
 }
 
 
@@ -208,9 +144,8 @@ function normalizeInput(text) {
 ==========================================================
 JSON SZINTAKTIKAI JAVÍTÁS
 ==========================================================
-
 Csak egyértelmű JSON-szintaktikai hibát javítunk.
-A CKI tartalmát nem generáljuk újra.
+A CKI struktúrát és tartalmat nem alakítjuk át.
 ==========================================================
 */
 
@@ -218,233 +153,75 @@ function repairJSONSyntax(text) {
 
     let repaired = text;
 
-
     repaired = repaired.replace(
         /\\([^"\\\/bfnrtu])/g,
         "$1"
     );
-
 
     repaired = repaired.replace(
         /,\s*([}\]])/g,
         "$1"
     );
 
-
     return repaired;
-
 }
 
 
 /*
 ==========================================================
-CKI ENVELOPE / SCHEMA RESOLUTION
+CKI v1.2 VALIDATION
 ==========================================================
 */
-
-function unwrapCKIEnvelope(json) {
-
-    if (
-        json &&
-        typeof json === "object" &&
-        !Array.isArray(json) &&
-        json.cki_json &&
-        typeof json.cki_json === "object" &&
-        !Array.isArray(json.cki_json) &&
-        !json.metadata &&
-        !json.source_metadata
-    ) {
-
-        return json.cki_json;
-
-    }
-
-
-    return json;
-
-}
-
-
-function getMetadata(json) {
-
-    if (
-        json?.metadata &&
-        typeof json.metadata === "object"
-    ) {
-
-        return json.metadata;
-
-    }
-
-
-    // Backward compatibility with the former MAG-side structure.
-    if (
-        json?.source_metadata &&
-        typeof json.source_metadata === "object"
-    ) {
-
-        return json.source_metadata;
-
-    }
-
-
-    return null;
-
-}
-
 
 function getCKIVersion(json) {
 
     if (json?.cki_spec_version)
         return String(json.cki_spec_version);
 
-
     if (json?.processing_metadata?.cki_spec_version)
         return String(json.processing_metadata.cki_spec_version);
-
 
     if (json?.metadata?.cki_spec_version)
         return String(json.metadata.cki_spec_version);
 
-
-    // Canonical CKI v1.2 is identified structurally because the
-    // specification itself defines version 1.2 but does not require
-    // a cki_spec_version property in every record.
-    if (
-        json?.metadata &&
-        json?.topics &&
-        Object.prototype.hasOwnProperty.call(
-            json,
-            "retrieval_summary"
-        )
-    ) {
-
+    if (looksLikeCanonicalCKI(json))
         return CKI_CANONICAL_VERSION;
 
-    }
-
-
     return "ismeretlen";
-
 }
 
 
 function validateCKIStructure(json) {
 
     const errors = [];
-    const metadata = getMetadata(json);
 
-
-    if (!metadata)
-        errors.push("Hiányzik: metadata");
-
-
-    if (
-        !Object.prototype.hasOwnProperty.call(
-            json ?? {},
-            "summary"
-        )
-    ) {
-
-        errors.push("Hiányzik: summary");
-
+    if (!isObject(json)) {
+        errors.push("A bemenet nem objektum.");
+        return errors;
     }
 
+    // Canonical CKI v1.2 requires root.metadata.
+    if (!isObject(json.metadata))
+        errors.push("Nem CKI v1.2: hiányzik a root.metadata.");
 
-    if (!json?.topics)
-        errors.push("Hiányzik: topics");
+    // Legacy MAG v1.1-shaped input must not be silently upgraded.
+    if (json.source_metadata || json.processing_metadata) {
+        errors.push("Nem CKI v1.2: legacy source_metadata/processing_metadata szerkezet.");
+    }
 
+    if (!Object.prototype.hasOwnProperty.call(json, "summary"))
+        errors.push("Nem CKI v1.2: hiányzik a summary.");
+
+    if (!Object.prototype.hasOwnProperty.call(json, "retrieval_summary"))
+        errors.push("Nem CKI v1.2: hiányzik a retrieval_summary.");
+
+    if (!isObject(json.topics))
+        errors.push("Nem CKI v1.2: hiányzik a topics.");
 
     if (!json?.topics?.primary)
-        errors.push("Hiányzik: topics.primary");
-
+        errors.push("Nem CKI v1.2: hiányzik a topics.primary.");
 
     return errors;
-
-}
-
-
-/*
-==========================================================
-CANONICALIZATION
-==========================================================
-*/
-
-function canonicalizeCKI(json) {
-
-    const source =
-        unwrapCKIEnvelope(json);
-
-
-    if (
-        !source ||
-        typeof source !== "object" ||
-        Array.isArray(source)
-    ) {
-
-        return source;
-
-    }
-
-
-    if (
-        source.metadata &&
-        !source.source_metadata
-    ) {
-
-        return source;
-
-    }
-
-
-    // Legacy -> canonical metadata mapping.
-    if (source.source_metadata) {
-
-        const metadata = {
-            ...(source.source_metadata || {})
-        };
-
-
-        if (source.processing_metadata) {
-
-            for (const key of [
-                "context_scope",
-                "context_confidence",
-                "coverage_assessment"
-            ]) {
-
-                if (
-                    metadata[key] == null &&
-                    source.processing_metadata[key] != null
-                ) {
-
-                    metadata[key] =
-                        source.processing_metadata[key];
-
-                }
-
-            }
-
-        }
-
-
-        const canonical = {
-            ...source,
-            metadata
-        };
-
-
-        delete canonical.source_metadata;
-        delete canonical.processing_metadata;
-
-
-        return canonical;
-
-    }
-
-
-    return source;
-
 }
 
 
@@ -456,15 +233,7 @@ BUILD RECORD
 
 function buildRecord(json) {
 
-    const canonical =
-        canonicalizeCKI(json);
-
-    const metadata =
-        getMetadata(canonical) || {};
-
-    const version =
-        getCKIVersion(json);
-
+    const metadata = json.metadata || {};
 
     return {
 
@@ -484,7 +253,7 @@ function buildRecord(json) {
             metadata.conversation_start ?? null,
 
         cki_spec_version:
-            version,
+            getCKIVersion(json),
 
         context_scope:
             metadata.context_scope ?? null,
@@ -496,31 +265,29 @@ function buildRecord(json) {
             metadata.coverage_assessment ?? null,
 
         summary:
-            canonical.summary ?? "",
+            json.summary ?? "",
 
         retrieval_summary:
-            canonical.retrieval_summary ?? "",
+            json.retrieval_summary ?? "",
 
         primary_topic:
-            canonical.topics?.primary ?? "",
+            json.topics?.primary ?? "",
 
         secondary_topics:
-            canonical.topics?.secondary ?? [],
+            json.topics?.secondary ?? [],
 
         keywords:
-            canonical.topics?.keywords ?? [],
+            json.topics?.keywords ?? [],
 
         systems:
-            canonical.systems ?? [],
+            json.systems ?? [],
 
         knowledge_objects:
-            canonical.knowledge_objects ?? [],
+            json.knowledge_objects ?? [],
 
         raw_json:
-            canonical
-
+            json
     };
-
 }
 
 
@@ -533,146 +300,64 @@ PARSE CKI
 function parseCKI(text) {
 
     const result = {
-
         success: false,
-
         record: null,
-
         version: "ismeretlen",
-
         errors: [],
-
         warnings: [],
-
         repaired: false,
-
         repairedText: null
-
     };
-
 
     try {
 
-        const normalized =
-            normalizeInput(text);
-
+        const normalized = normalizeInput(text);
         let json;
 
-
-        /*
-        --------------------------------------------------
-        1. Eredeti JSON megpróbálása
-        --------------------------------------------------
-        */
-
+        // 1. Original JSON.
         try {
-
-            json =
-                JSON.parse(normalized);
-
+            json = JSON.parse(normalized);
         }
-
         catch (firstError) {
 
-            /*
-            --------------------------------------------------
-            2. Csak szintaktikai javítás
-            --------------------------------------------------
-            */
-
-            const repaired =
-                repairJSONSyntax(normalized);
-
+            // 2. Syntax-only repair.
+            const repaired = repairJSONSyntax(normalized);
 
             if (repaired === normalized) {
-
-                result.errors.push(
-                    firstError.message
-                );
-
+                result.errors.push(firstError.message);
                 return result;
-
             }
-
-
-            /*
-            --------------------------------------------------
-            3. Javított JSON újra parse-olása
-            --------------------------------------------------
-            */
 
             try {
-
-                json =
-                    JSON.parse(repaired);
-
+                json = JSON.parse(repaired);
                 result.repaired = true;
-
-                result.repairedText =
-                    JSON.stringify(
-                        canonicalizeCKI(json),
-                        null,
-                        2
-                    );
-
+                result.repairedText = JSON.stringify(json, null, 2);
             }
-
             catch {
-
                 result.errors.push(
                     "A JSON szintaktikai hibája nem javítható automatikusan tartalmi módosítás nélkül."
                 );
-
                 return result;
-
             }
-
         }
 
+        result.version = getCKIVersion(json);
 
-        json =
-            unwrapCKIEnvelope(json);
-
-
-        result.version =
-            getCKIVersion(json);
-
-
-        const validationErrors =
-            validateCKIStructure(json);
-
+        const validationErrors = validateCKIStructure(json);
 
         if (validationErrors.length > 0) {
-
-            result.errors =
-                validationErrors;
-
+            result.errors = validationErrors;
             return result;
-
         }
 
-
-        result.record =
-            buildRecord(json);
-
-
-        result.success =
-            true;
-
+        result.record = buildRecord(json);
+        result.success = true;
 
         return result;
 
     }
-
-
     catch (err) {
-
-        result.errors.push(
-            err.message
-        );
-
+        result.errors.push(err.message);
         return result;
-
     }
-
 }
