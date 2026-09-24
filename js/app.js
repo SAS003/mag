@@ -1,6 +1,6 @@
 /*
 ==========================================================
-MAG v0.2.1
+MAG v0.2.3
 app.js
 ==========================================================
 */
@@ -9,10 +9,226 @@ console.log("MAG", CONFIG.VERSION);
 
 let currentRecord = null;
 
+
+function inputElement() {
+    return document.getElementById("jsonInput");
+}
+
+
+function clearAllPreviews() {
+    clearPreview();
+    clearAPPreview();
+}
+
+
+function reportDetection(detection) {
+
+    if (
+        detection.detection_status ===
+        MAG_DETECTION_STATUSES.AMBIGUOUS
+    ) {
+        setStatus(
+            "⚠️ A bemenet egyszerre több támogatott tartalomtípus jeleit tartalmazza. " +
+            "A routing nem indítható.\n" +
+            detection.detection_evidence.join(" | "),
+            "warning"
+        );
+
+        return false;
+    }
+
+    if (
+        detection.detection_status ===
+        MAG_DETECTION_STATUSES.UNKNOWN
+    ) {
+        setStatus(
+            "❌ A bemenettípus nem azonosítható egyértelműen.\n" +
+            detection.detection_evidence.join(" | "),
+            "error"
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+async function handleAPSave(raw) {
+
+    const result = parseAP(raw);
+
+    if (!result.success) {
+        currentRecord = null;
+        clearAllPreviews();
+
+        setStatus(
+            "❌ AP: " +
+            result.errors.join(" | ") +
+            " | verzió: " +
+            result.version,
+            "error"
+        );
+
+        return;
+    }
+
+    currentRecord = result.record;
+
+    clearPreview();
+    showAPPreview(currentRecord);
+
+    await saveAPToSupabase(currentRecord);
+}
+
+
+async function handleCKISave(raw) {
+
+    const result = parseCKI(raw);
+
+    if (result.repaired) {
+        inputElement().value =
+            result.repairedText;
+
+        currentRecord = null;
+        clearAllPreviews();
+
+        setStatus(
+            "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
+            "A tartalom és a CKI séma nem változott.\n" +
+            "Nyomd meg ismét a Save vagy Preview gombot.",
+            "warning"
+        );
+
+        return;
+    }
+
+    if (!result.success) {
+        currentRecord = null;
+        clearAllPreviews();
+
+        setStatus(
+            "❌ " +
+            result.errors.join(" | ") +
+            " | CKI verzió: " +
+            result.version,
+            "error"
+        );
+
+        return;
+    }
+
+    currentRecord = result.record;
+
+    clearAPPreview();
+    showPreview(currentRecord);
+
+    await saveToSupabase(currentRecord);
+}
+
+
+function handlePreview(raw) {
+
+    const detection =
+        detectContentType(raw);
+
+    if (!reportDetection(detection)) {
+        currentRecord = null;
+        clearAllPreviews();
+        return;
+    }
+
+
+    if (
+        detection.detected_type ===
+        MAG_CONTENT_TYPES.AP
+    ) {
+        const result = parseAP(raw);
+
+        if (!result.success) {
+            currentRecord = null;
+            clearAllPreviews();
+
+            setStatus(
+                "❌ AP: " +
+                result.errors.join(" | ") +
+                " | verzió: " +
+                result.version,
+                "error"
+            );
+
+            return;
+        }
+
+        currentRecord = result.record;
+
+        clearPreview();
+        showAPPreview(currentRecord);
+
+        setStatus(
+            "✅ Érvényes Article Profile",
+            "success"
+        );
+
+        return;
+    }
+
+
+    if (
+        detection.detected_type ===
+        MAG_CONTENT_TYPES.CKI
+    ) {
+        const result = parseCKI(raw);
+
+        if (result.repaired) {
+            inputElement().value =
+                result.repairedText;
+
+            currentRecord = null;
+            clearAllPreviews();
+
+            setStatus(
+                "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
+                "A tartalom és a CKI séma nem változott.\n" +
+                "Nyomd meg ismét a Preview gombot.",
+                "warning"
+            );
+
+            return;
+        }
+
+        if (!result.success) {
+            currentRecord = null;
+            clearAllPreviews();
+
+            setStatus(
+                "❌ " +
+                result.errors.join(" | ") +
+                " | CKI verzió: " +
+                result.version,
+                "error"
+            );
+
+            return;
+        }
+
+        currentRecord = result.record;
+
+        clearAPPreview();
+        showPreview(currentRecord);
+
+        setStatus(
+            "✅ Érvényes CKI " +
+            result.version,
+            "success"
+        );
+    }
+}
+
+
 window.onload = function () {
 
-    const input =
-        document.getElementById("jsonInput");
+    const input = inputElement();
 
     const previewBtn =
         document.getElementById("previewBtn");
@@ -41,313 +257,72 @@ window.onload = function () {
         const raw =
             input.value.trim();
 
+        const detection =
+            detectContentType(raw);
 
-        // ======================================================
-        // ARTICLE PROFILE
-        // ======================================================
-
-        const apResult =
-            parseAP(raw);
-
+        if (!reportDetection(detection)) {
+            currentRecord = null;
+            clearAllPreviews();
+            return;
+        }
 
         if (
-            apResult.success ||
-            (
-                apResult.version !== "ismeretlen" &&
-                apResult.errors.length > 0 &&
-                raw.includes('"schema_version"')
-            )
+            detection.detected_type ===
+            MAG_CONTENT_TYPES.AP
         ) {
-
-            if (!apResult.success) {
-
-                currentRecord = null;
-
-                clearPreview();
-
-                clearAPPreview();
-
-                setStatus(
-                    "❌ AP: " +
-                    apResult.errors.join(" | ") +
-                    " | verzió: " +
-                    apResult.version,
-                    "error"
-                );
-
-                return;
-
-            }
-
-
-            currentRecord =
-                apResult.record;
-
-
-            await saveAPToSupabase(
-                currentRecord
-            );
-
+            await handleAPSave(raw);
             return;
-
         }
 
-
-        // ======================================================
-        // CKI — MEGLÉVŐ LOGIKA
-        // ======================================================
-
-        const result =
-            parseCKI(input.value);
-
-
-        if (result.repaired) {
-
-            input.value =
-                result.repairedText;
-
-            setStatus(
-                "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
-                "A tartalom és a CKI séma nem változott.",
-                "warning"
-            );
-
-            return;
-
+        if (
+            detection.detected_type ===
+            MAG_CONTENT_TYPES.CKI
+        ) {
+            await handleCKISave(raw);
         }
+    };
 
 
-        if (!result.success) {
-
-            clearPreview();
-
-            setStatus(
-                "❌ " +
-                result.errors.join(" | ") +
-                " | CKI verzió: " +
-                result.version,
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        currentRecord =
-            result.record;
-
-        showPreview(
-            currentRecord
-        );
-
-        await saveToSupabase(
-            currentRecord
-        );
-
+    previewBtn.onclick = function () {
+        handlePreview(input.value.trim());
     };
 
 
     copySqlBtn.onclick = async function () {
 
-        const text =
+        const sqlText =
             document.getElementById("sqlOutput").value;
 
         try {
-
-            await navigator.clipboard.writeText(text);
+            await navigator.clipboard.writeText(
+                sqlText
+            );
 
             setStatus(
                 "✅ SQL a vágólapra másolva.",
                 "success"
             );
-
         }
-
         catch {
-
             setStatus(
                 "❌ Nem sikerült másolni.",
                 "error"
             );
-
         }
-
-    };
-
-
-    previewBtn.onclick = function () {
-
-        const raw =
-            input.value.trim();
-
-
-        // ======================================================
-        // ARTICLE PROFILE DETECTION
-        // ======================================================
-
-        let parsed = null;
-
-        try {
-
-            parsed =
-                JSON.parse(
-                    normalizeAPInput(raw)
-                );
-
-        }
-
-        catch {
-
-            parsed = null;
-
-        }
-
-
-        // ======================================================
-        // ARTICLE PROFILE
-        // ======================================================
-
-        if (
-            parsed &&
-            parsed.schema_version &&
-            parsed.content_type === "article_profile" &&
-            parsed.source?.url
-        ) {
-
-            const result =
-                parseAP(raw);
-
-
-            if (!result.success) {
-
-                currentRecord = null;
-
-                clearPreview();
-
-                clearAPPreview();
-
-                setStatus(
-                    "❌ AP: " +
-                    result.errors.join(" | ") +
-                    " | verzió: " +
-                    result.version,
-                    "error"
-                );
-
-                return;
-
-            }
-
-
-            currentRecord =
-                result.record;
-
-
-            clearPreview();
-
-            showAPPreview(
-                currentRecord
-            );
-
-
-            setStatus(
-                "✅ Érvényes Article Profile",
-                "success"
-            );
-
-            return;
-
-        }
-
-
-        // ======================================================
-        // CKI
-        // ======================================================
-
-        const result =
-            parseCKI(raw);
-
-
-        // JSON szintaktikai javítás történt
-        if (result.repaired) {
-
-            input.value =
-                result.repairedText;
-
-            currentRecord = null;
-
-            clearPreview();
-
-            clearAPPreview();
-
-            setStatus(
-                "⚠️ A JSON szintaktikai hibája automatikusan javítva.\n" +
-                "A tartalom és a CKI séma nem változott.",
-                "warning"
-            );
-
-            return;
-
-        }
-
-
-        // Normál CKI validáció hibával
-        if (!result.success) {
-
-            currentRecord = null;
-
-            clearPreview();
-
-            clearAPPreview();
-
-            setStatus(
-                "❌ " +
-                result.errors.join(" | ") +
-                " | CKI verzió: " +
-                result.version,
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        // Érvényes CKI
-        currentRecord =
-            result.record;
-
-
-        clearAPPreview();
-
-        showPreview(
-            currentRecord
-        );
-
-        setStatus(
-            "✅ Érvényes CKI " +
-            result.version,
-            "success"
-        );
-
     };
 
 
     exportCKIBtn.onclick = function () {
-
         exportCurrentCKI();
-
     };
 
 
     clearBtn.onclick = function () {
 
         input.value = "";
-
         currentRecord = null;
 
-        clearPreview();
+        clearAllPreviews();
 
         document
             .getElementById("sqlPanel")
@@ -358,32 +333,38 @@ window.onload = function () {
             .value = "";
 
         setStatus("");
-
     };
 
 
     sqlBtn.onclick = function () {
 
         if (!currentRecord) {
-
             setStatus(
                 "Először készíts Preview-t.",
                 "warning"
             );
-
             return;
+        }
 
+        if (
+            !currentRecord.raw_json ||
+            !currentRecord.raw_json.metadata ||
+            currentRecord.raw_json.metadata.cki_spec_version !==
+                "1.3"
+        ) {
+            setStatus(
+                "⚠️ SQL-generálás jelenleg CKI v1.3 rekordokra értelmezett.",
+                "warning"
+            );
+            return;
         }
 
         generateSQL(currentRecord);
-
     };
 
 
     exportCorpusBtn.onclick = function () {
-
         exportCorpus();
-
     };
 
 
