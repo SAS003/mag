@@ -174,7 +174,7 @@ function extractJSONCandidate(text) {
             continue;
         }
 
-        if (ch === "\" && inString) {
+        if (ch === "\\" && inString) {
             escaped = true;
             continue;
         }
