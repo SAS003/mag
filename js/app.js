@@ -96,6 +96,7 @@ async function handleAPSave(raw) {
 
 async function handleCKISave(raw) {
 
+    clearCKIImportDiagnostic();
     const result = parseCKI(raw);
 
     if (result.repaired) {
@@ -126,10 +127,17 @@ async function handleCKISave(raw) {
             result.version,
             "error"
         );
+        showCKIImportFailureDiagnostic({
+            stage: "parser/validator",
+            rawInput: raw,
+            errors: result.errors,
+            version: result.version
+        });
 
         return;
     }
 
+    clearCKIImportDiagnostic();
     currentRecord = result.record;
 
     clearAPPreview();
@@ -190,6 +198,7 @@ function handlePreview(raw) {
         detection.detected_type ===
         MAG_CONTENT_TYPES.CKI
     ) {
+        clearCKIImportDiagnostic();
         const result = parseCKI(raw);
 
         if (result.repaired) {
@@ -220,10 +229,17 @@ function handlePreview(raw) {
                 result.version,
                 "error"
             );
+            showCKIImportFailureDiagnostic({
+                stage: "parser/validator",
+                rawInput: raw,
+                errors: result.errors,
+                version: result.version
+            });
 
             return;
         }
 
+        clearCKIImportDiagnostic();
         currentRecord = result.record;
 
         clearAPPreview();
@@ -347,6 +363,7 @@ window.onload = function () {
             .value = "";
 
         setStatus("");
+        clearCKIImportDiagnostic();
     };
 
 
