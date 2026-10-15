@@ -153,7 +153,7 @@ function handlePreview(raw) {
         detectContentType(raw);
 
     if (!reportDetection(detection)) {
-        if (/"cki_spec_version"\\s*:|"retrieval_summary"\\s*:|source_metadata|processing_metadata/i.test(raw)) {
+        if (raw.includes('"cki_spec_version"') || raw.includes('"retrieval_summary"') || /source_metadata|processing_metadata/i.test(raw)) {
             showCKIImportFailureDiagnostic({
                 stage: "detection",
                 rawInput: raw,
@@ -292,6 +292,7 @@ window.onload = function () {
 
     saveBtn.onclick = async function () {
 
+        clearCKIImportDiagnostic();
         const raw =
             input.value.trim();
 
@@ -299,7 +300,7 @@ window.onload = function () {
             detectContentType(raw);
 
         if (!reportDetection(detection)) {
-            if (/"cki_spec_version"\\s*:|"retrieval_summary"\\s*:|source_metadata|processing_metadata/i.test(raw)) {
+            if (raw.includes('"cki_spec_version"') || raw.includes('"retrieval_summary"') || /source_metadata|processing_metadata/i.test(raw)) {
                 showCKIImportFailureDiagnostic({
                     stage: "detection",
                     rawInput: raw,
@@ -330,6 +331,7 @@ window.onload = function () {
 
 
     previewBtn.onclick = function () {
+        clearCKIImportDiagnostic();
         handlePreview(input.value.trim());
     };
 
