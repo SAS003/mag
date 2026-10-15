@@ -153,6 +153,14 @@ function handlePreview(raw) {
         detectContentType(raw);
 
     if (!reportDetection(detection)) {
+        if (/"cki_spec_version"\\s*:|"retrieval_summary"\\s*:|source_metadata|processing_metadata/i.test(raw)) {
+            showCKIImportFailureDiagnostic({
+                stage: "detection",
+                rawInput: raw,
+                errors: detection.detection_evidence,
+                version: "ismeretlen"
+            });
+        }
         currentRecord = null;
         clearAllPreviews();
         return;
@@ -291,6 +299,14 @@ window.onload = function () {
             detectContentType(raw);
 
         if (!reportDetection(detection)) {
+            if (/"cki_spec_version"\\s*:|"retrieval_summary"\\s*:|source_metadata|processing_metadata/i.test(raw)) {
+                showCKIImportFailureDiagnostic({
+                    stage: "detection",
+                    rawInput: raw,
+                    errors: detection.detection_evidence,
+                    version: "ismeretlen"
+                });
+            }
             currentRecord = null;
             clearAllPreviews();
             return;
