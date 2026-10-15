@@ -21,7 +21,11 @@ function describeCKIImportFailure({
     errors,
     version
 }) {
-    const raw = String(rawInput ?? "");
+    const raw = typeof rawInput === "string"
+        ? rawInput
+        : rawInput && typeof rawInput === "object"
+            ? JSON.stringify(rawInput, null, 2)
+            : String(rawInput ?? "");
     const messages = (Array.isArray(errors) ? errors : [errors])
         .filter(value => value !== null && value !== undefined)
         .map(value => {
