@@ -383,3 +383,32 @@ button:disabled{
     font-family:Consolas,monospace;
     font-size:13px;
 }
+
+
+/* ==========================================================
+   CKI IMPORT DIAGNOSTICS · MAG v0.2.11
+========================================================== */
+.diagnostic-panel {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #d7a400;
+    border-left: 4px solid #d7a400;
+    border-radius: 6px;
+    background: #fffdf5;
+    font-weight: normal;
+}
+
+.diagnostic-panel h3 {
+    margin: 0 0 12px;
+}
+
+.diagnostic-panel p {
+    margin: 8px 0;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.diagnostic-note {
+    color: #666;
+    font-size: 13px;
+}

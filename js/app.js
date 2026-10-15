@@ -96,6 +96,7 @@ async function handleAPSave(raw) {
 
 async function handleCKISave(raw) {
 
+    clearCKIImportDiagnostic();
     const result = parseCKI(raw);
 
     if (result.repaired) {
@@ -126,10 +127,17 @@ async function handleCKISave(raw) {
             result.version,
             "error"
         );
+        showCKIImportFailureDiagnostic({
+            stage: "parser/validator",
+            rawInput: raw,
+            errors: result.errors,
+            version: result.version
+        });
 
         return;
     }
 
+    clearCKIImportDiagnostic();
     currentRecord = result.record;
 
     clearAPPreview();
@@ -145,6 +153,14 @@ function handlePreview(raw) {
         detectContentType(raw);
 
     if (!reportDetection(detection)) {
+        if (raw.includes('"cki_spec_version"') || raw.includes('"retrieval_summary"') || /source_metadata|processing_metadata/i.test(raw)) {
+            showCKIImportFailureDiagnostic({
+                stage: "detection",
+                rawInput: raw,
+                errors: detection.detection_evidence,
+                version: "ismeretlen"
+            });
+        }
         currentRecord = null;
         clearAllPreviews();
         return;
@@ -190,6 +206,7 @@ function handlePreview(raw) {
         detection.detected_type ===
         MAG_CONTENT_TYPES.CKI
     ) {
+        clearCKIImportDiagnostic();
         const result = parseCKI(raw);
 
         if (result.repaired) {
@@ -220,10 +237,17 @@ function handlePreview(raw) {
                 result.version,
                 "error"
             );
+            showCKIImportFailureDiagnostic({
+                stage: "parser/validator",
+                rawInput: raw,
+                errors: result.errors,
+                version: result.version
+            });
 
             return;
         }
 
+        clearCKIImportDiagnostic();
         currentRecord = result.record;
 
         clearAPPreview();
@@ -268,6 +292,7 @@ window.onload = function () {
 
     saveBtn.onclick = async function () {
 
+        clearCKIImportDiagnostic();
         const raw =
             input.value.trim();
 
@@ -275,6 +300,14 @@ window.onload = function () {
             detectContentType(raw);
 
         if (!reportDetection(detection)) {
+            if (raw.includes('"cki_spec_version"') || raw.includes('"retrieval_summary"') || /source_metadata|processing_metadata/i.test(raw)) {
+                showCKIImportFailureDiagnostic({
+                    stage: "detection",
+                    rawInput: raw,
+                    errors: detection.detection_evidence,
+                    version: "ismeretlen"
+                });
+            }
             currentRecord = null;
             clearAllPreviews();
             return;
@@ -298,6 +331,7 @@ window.onload = function () {
 
 
     previewBtn.onclick = function () {
+        clearCKIImportDiagnostic();
         handlePreview(input.value.trim());
     };
 
@@ -347,6 +381,7 @@ window.onload = function () {
             .value = "";
 
         setStatus("");
+        clearCKIImportDiagnostic();
     };
 
 

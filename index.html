@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAG</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=031">
 </head>
 
 <body>
@@ -36,6 +36,16 @@
             </div>
 
             <div id="status" class="status"></div>
+
+            <section id="ckiImportDiagnostic" class="diagnostic-panel hidden" aria-live="polite">
+                <h3>CKI hibajelentés</h3>
+                <p><strong>Feldolgozási pont:</strong> <span id="ckiDiagPhase"></span></p>
+                <p><strong>Eredeti hiba:</strong> <span id="ckiDiagError"></span></p>
+                <p><strong>Bemeneti jelzés:</strong> <span id="ckiDiagEvidence"></span></p>
+                <p><strong>Valószínű ok:</strong> <span id="ckiDiagCause"></span></p>
+                <p><strong>Következő lépés:</strong> <span id="ckiDiagNextStep"></span></p>
+                <p class="diagnostic-note">Az eredeti bemenet a beviteli mezőben marad. A diagnosztika nem javítja át a JSON-t.</p>
+            </section>
 
         </section>
 
@@ -114,22 +124,23 @@
 
     </div>
 
-    <script src="js/config.js?v=030"></script>
-    <script src="js/parser.js?v=030"></script>
-    <script src="js/ingest.js?v=030"></script>
-    <script src="js/preview.js?v=030"></script>
-    <script src="js/sql.js?v=030"></script>
-    <script src="js/supabase.js?v=030"></script>
-    <script src="js/cki_update.js?v=030"></script>
-    <script src="js/list.js?v=030"></script>
-    <script src="js/cki_corpus_v1.js?v=030"></script>
-    <script src="js/cki_export.js?v=030"></script>
+    <script src="js/config.js?v=031"></script>
+    <script src="js/parser.js?v=031"></script>
+    <script src="js/ingest.js?v=031"></script>
+    <script src="js/preview.js?v=031"></script>
+    <script src="js/sql.js?v=031"></script>
+    <script src="js/supabase.js?v=031"></script>
+    <script src="js/cki_update.js?v=031"></script>
+    <script src="js/list.js?v=031"></script>
+    <script src="js/cki_corpus_v1.js?v=031"></script>
+    <script src="js/cki_export.js?v=031"></script>
 
-    <script src="js/ap_parser.js?v=030"></script>
-    <script src="js/ap_preview.js?v=030"></script>
-    <script src="js/ap_supabase.js?v=030"></script>
+    <script src="js/ap_parser.js?v=031"></script>
+    <script src="js/ap_preview.js?v=031"></script>
+    <script src="js/ap_supabase.js?v=031"></script>
 
-    <script src="js/app.js?v=030"></script>
+    <script src="js/cki_diagnostics.js?v=031"></script>
+    <script src="js/app.js?v=031"></script>
 
 </body>
 
