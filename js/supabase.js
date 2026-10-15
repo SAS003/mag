@@ -227,6 +227,13 @@ async function insertCKIRecord(
 
     if (error.code === "23505") {
 
+        showCKIImportFailureDiagnostic({
+            stage: "database",
+            rawInput: record.raw_json,
+            errors: [error],
+            version: record.cki_spec_version
+        });
+
         setStatus(
             "⚠️ Az adatbázis egyedi korlátozása ütközést jelzett. Az ütköző rekordot nem írtuk felül.",
             "warning"
@@ -240,6 +247,13 @@ async function insertCKIRecord(
 
     }
 
+
+    showCKIImportFailureDiagnostic({
+        stage: "database",
+        rawInput: record.raw_json,
+        errors: [error],
+        version: record.cki_spec_version
+    });
 
     setStatus(
         "❌ " +
@@ -339,6 +353,13 @@ async function saveToSupabase(record) {
 
             const error =
                 await lookupResponse.text();
+
+            showCKIImportFailureDiagnostic({
+                stage: "database",
+                rawInput: record.raw_json,
+                errors: [error],
+                version: record.cki_spec_version
+            });
 
             setStatus(
                 "❌ CKI existence check hiba: " +
@@ -475,6 +496,13 @@ async function saveToSupabase(record) {
             "CKI mentési hiba:",
             err
         );
+
+        showCKIImportFailureDiagnostic({
+            stage: "database",
+            rawInput: record.raw_json,
+            errors: [err],
+            version: record.cki_spec_version
+        });
 
         setStatus(
             "❌ " +
