@@ -42,7 +42,6 @@ function describeCKIImportFailure({
             return String(value);
         });
     const originalError = messages.join(" | ") || "Nincs részletes hibaüzenet.";
-    const searchable = originalError + "\n" + raw;
     let phase = stage || "CKI feldolgozás";
     let likelyCause = "A rendelkezésre álló hibaüzenetből nem állapítható meg biztosan az ok.";
     let nextStep = "A fenti eredeti hibaüzenet alapján ellenőrizd a megjelölt feldolgozási lépést.";
@@ -75,7 +74,11 @@ function describeCKIImportFailure({
         phase = "CKI v1.3 sémaellenőrzés";
         likelyCause = "A bemenet a régi source_metadata / processing_metadata szerkezetet használhatja, amely nem canonical CKI v1.3.";
         nextStep = "Az exportot a canonical CKI v1.3 specifikáció szerint kell előállítani; a MAG nem alakítja át automatikusan a régi sémát.";
-    } else if (/Érvénytelen CKI verzió|cki_spec_version|elvárt: 1\.3/i.test(originalError) ||
+    } else if (stage === "detection") {
+        phase = "Bemenettípus-felismerés";
+        likelyCause = "A bemenet nem tartalmazta egyértelműen a CKI felismeréséhez szükséges szerkezeti jeleket.";
+        nextStep = "Ellenőrizd, hogy a teljes CKI JSON-t illesztetted-e be, és szerepel-e benne a metadata.cki_spec_version, retrieval_summary és topics.primary mező.";
+    } else if (/Érvénytelen CKI verzió|cki_spec_version|elvárt: 1\\.3/i.test(originalError) ||
                (version && version !== "ismeretlen" && version !== "1.3")) {
         phase = "CKI verzióellenőrzés";
         likelyCause = "A bemenet verziójelölése nem felel meg a MAG által elfogadott CKI v1.3-nak.";
