@@ -74,3 +74,16 @@ Scope:
 - CKI v1.3 exporter
 
 A live DB schema alignment és a böngésző cache-verzió frissítése megtörtént; a következő kapu a valódi frontend/Supabase import-útvonal ellenőrzése.
+
+## MAG v0.2.11 — CKI import diagnostics
+
+Branch: `mag-v0.2.11-cki-error-diagnostics`
+
+- CKI parser/validator failures show the original error plus a short diagnosis inferred from the error and submitted JSON.
+- CKI Supabase lookup/save failures show the original backend error plus a likely cause and next step.
+- The submitted JSON remains unchanged by diagnostics; diagnostics never repair or migrate the schema.
+- Successful CKI import flow is unchanged.
+- Article Profile (AP) parser, validation, and import paths are unchanged.
+- CKI v1.3 strict validation remains in force.
+
+The branch is a versioned development change; it is not merged into `main` by this update.
