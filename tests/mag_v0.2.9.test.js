@@ -24,7 +24,7 @@ function load(relativePath) {
 
 load("js/config.js");
 
-assert.equal(CONFIG.VERSION, "0.2.10");
+assert.equal(CONFIG.VERSION, "0.2.11");
 
 const indexHtml = fs.readFileSync(
     path.join(__dirname, "..", "index.html"),
@@ -39,6 +39,7 @@ assert.doesNotMatch(
 
 load("js/ingest.js");
 load("js/parser.js");
+load("js/cki_diagnostics.js");
 
 function makeCKI() {
     return {
@@ -72,6 +73,44 @@ function makeCKI() {
         search_questions: [],
         knowledge_objects: []
     };
+}
+
+{
+    const legacy = describeCKIImportFailure({
+        stage: "parser/validator",
+        rawInput: JSON.stringify({
+            source_metadata: { source: "chatgpt" },
+            processing_metadata: {},
+            metadata: { cki_spec_version: "1.2" }
+        }),
+        errors: ["source_metadata nem megengedett; canonical CKI v1.3 szükséges."],
+        version: "1.2"
+    });
+    assert.equal(legacy.phase, "CKI v1.3 sémaellenőrzés");
+    assert.match(legacy.likelyCause, /source_metadata/);
+    assert.match(legacy.nextStep, /nem alakítja át automatikusan/);
+}
+
+{
+    const syntax = describeCKIImportFailure({
+        stage: "parser/validator",
+        rawInput: '{"metadata":{"cki_spec_version":"1.3"}',
+        errors: ["Unexpected end of JSON input at position 38"],
+        version: "ismeretlen"
+    });
+    assert.equal(syntax.phase, "JSON-szintaxis");
+    assert.match(syntax.nextStep, /38/);
+}
+
+{
+    const database = describeCKIImportFailure({
+        stage: "database",
+        rawInput: { metadata: { cki_spec_version: "1.3" } },
+        errors: [{ code: "23505", message: "duplicate key" }],
+        version: "1.3"
+    });
+    assert.equal(database.phase, "Adatbázis-mentés");
+    assert.match(database.likelyCause, /egyedi korlátozás/);
 }
 
 {
@@ -758,7 +797,7 @@ function makeCKIRecordForTests() {
 
 
     console.log(
-        "MAG v0.2.10 tests: OK"
+        "MAG v0.2.11 tests: OK"
     );
 
 })();
